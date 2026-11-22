@@ -36,6 +36,7 @@ button,input,textarea,select{font:inherit;color:inherit}button{cursor:pointer;to
 .tab{flex:none;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid var(--line);background:var(--panel2);border-radius:999px;padding:8px 14px;font-size:13px}
 .tab.on{background:var(--green);color:#09200f;border-color:var(--green);font-weight:700}
 #script{display:block;width:100%;min-height:340px;height:48vh;resize:vertical;background:transparent;border:0;outline:0;padding:16px;font-size:17px;line-height:1.6}
+.tools{display:flex;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}.tools .btn{flex:1;min-width:120px}.loading{padding:10px 15px;font-size:13px;color:var(--green);border-bottom:1px solid var(--line)}#script.drop{outline:2px dashed var(--green);outline-offset:-6px}
 .foot{padding:10px 14px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
 .settings{padding:14px 15px;display:grid;grid-template-columns:1fr 1fr;gap:16px 14px}
 .field label{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:8px}.field b{color:var(--white)}
@@ -90,9 +91,16 @@ select{width:100%;background:#0b100c;border:1px solid var(--line);border-radius:
   <section class="card">
    <h2>COPIONI <button class="btn" id="newScript">+ Nuovo</button></h2>
    <div class="tabs" id="tabs"></div>
-   <textarea id="script" placeholder="Incolla qui il testo del tuo video…" autocapitalize="sentences"></textarea>
+   <div class="tools">
+    <button class="btn primary" id="paste">Incolla testo</button>
+    <button class="btn" id="import">Carica documento</button>
+    <button class="btn ghost" id="clear">Svuota</button>
+    <input hidden type="file" id="file" accept=".txt,.md,.rtf,.docx,.pdf,.html,.htm,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+   </div>
+   <div class="loading" id="loading" hidden>Leggo il documento…</div>
+   <textarea id="script" placeholder="Premi «Incolla testo» oppure «Carica documento» (Word, PDF, TXT).&#10;Puoi anche scrivere qui o inviare il testo dal telefono." autocapitalize="sentences"></textarea>
    <div class="foot"><span class="muted" id="stats">0 parole</span>
-    <span style="display:flex;gap:8px"><button class="btn" id="import">+ File TXT</button><button class="btn danger" id="del">Elimina</button><input hidden type="file" id="file" accept=".txt,.md"></span></div>
+    <button class="btn danger" id="del">Elimina questo copione</button></div>
   </section>
   <div>
    <section class="card">
@@ -145,6 +153,9 @@ select{width:100%;background:#0b100c;border:1px solid var(--line);border-radius:
  <div class="sl"><span>Velocità</span><b id="rwpmv">150 WPM</b></div>
  <div class="twocol"><button class="btn big" id="rslow">− più lento</button><button class="btn big" id="rfast">+ più veloce</button></div>
  <div class="twocol"><button class="btn big" id="rfm">A− testo</button><button class="btn big" id="rfp">A+ testo</button></div>
+ <div class="sl" style="margin-top:26px"><span>Invia un testo all'iPad</span></div>
+ <textarea id="rtxt" placeholder="Incolla qui il copione e premi Invia" style="width:100%;min-height:130px;background:#0b100c;border:1px solid var(--line);border-radius:12px;padding:12px;font-size:16px"></textarea>
+ <div class="twocol"><button class="btn big" id="rpaste">Incolla</button><button class="btn primary big" id="rsend">Invia all'iPad</button></div>
 </div>
 <div class="toast" id="toast"></div>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -188,6 +199,8 @@ if(remoteMode){
  $('rmirror').onclick=c('mirror');$('rslow').onclick=c('wpmd',-5);$('rfast').onclick=c('wpmd',5);$('rfm').onclick=c('fontd',-4);$('rfp').onclick=c('fontd',4);
  let dragging=false;$('rpos').oninput=()=>{dragging=true;$('rposv').textContent=Math.round($('rpos').value/10)+'%';send({type:'cmd',action:'pos',value:$('rpos').value/1000})};$('rpos').onchange=()=>{dragging=false};
  window.remoteState=m=>{$('rplay').textContent=m.running?'Ⅱ Pausa':'▶ Play';$('rwpmv').textContent=m.wpm+' WPM';if(!dragging){$('rpos').value=Math.round(m.pos*1000);$('rposv').textContent=Math.round(m.pos*100)+'%'}$('rstatus').textContent=(m.open?(m.running?'● In riproduzione':'● In pausa'):'● Collegato · teleprompter chiuso')+' · '+m.time};
+ $('rpaste').onclick=async()=>{try{$('rtxt').value=await navigator.clipboard.readText()}catch{$('rtxt').focus();toast('Tieni premuto nel riquadro e scegli Incolla')}};
+ $('rsend').onclick=()=>{const t=$('rtxt').value.trim();if(!t)return toast('Scrivi o incolla prima il testo');if(!conn||!conn.open)return toast('Non collegato all\'iPad');send({type:'cmd',action:'script',value:{text:t.slice(0,300000),name:'Dal telefono'}});$('rtxt').value='';toast('Inviato all\'iPad')};
  try{navigator.wakeLock&&navigator.wakeLock.request('screen')}catch{}
  setupPeer();return;
 }
@@ -195,15 +208,44 @@ if(remoteMode){
 /* ---------- editor e copioni ---------- */
 const script=$('script');
 function words(){const t=script.value.trim();return t?t.split(/\s+/).length:0}
-function title(s,i){const l=(s.text||'').trim().split('\n')[0].slice(0,28);return l||('Copione '+(i+1))}
+function title(s,i){if(s.name)return s.name.slice(0,28);const l=(s.text||'').trim().split('\n')[0].slice(0,28);return l||('Copione '+(i+1))}
 function renderTabs(){$('tabs').innerHTML='';scripts.forEach((s,i)=>{const b=document.createElement('button');b.className='tab'+(i===cur?' on':'');b.textContent=title(s,i);b.onclick=()=>{cur=i;loadScript();saveS()};$('tabs').appendChild(b)})}
 function loadScript(){script.value=scripts[cur].text;renderTabs();stats()}
 function stats(){const w=words();$('stats').textContent=w+' parole · circa '+Math.max(1,Math.round(w/S.wpm))+' min a '+S.wpm+' WPM'}
 script.oninput=()=>{scripts[cur].text=script.value;stats();saveS();clearTimeout(script._t);script._t=setTimeout(renderTabs,400)};
 $('newScript').onclick=()=>{scripts.push({id:Date.now(),text:''});cur=scripts.length-1;loadScript();saveS();script.focus()};
 $('del').onclick=()=>{if(!confirm('Eliminare questo copione?'))return;scripts.splice(cur,1);if(!scripts.length)scripts=[{id:Date.now(),text:''}];cur=Math.max(0,Math.min(cur,scripts.length-1));loadScript();saveS()};
+function normalize(t){return String(t).replace(/\r\n?/g,'\n').replace(/[\u00a0\u2007\u202f]/g,' ').replace(/[\u200b\ufeff]/g,'').replace(/[ \t]+\n/g,'\n').replace(/\n[ \t]+/g,'\n').replace(/\n{3,}/g,'\n\n').trim()}
+// se il copione aperto e' vuoto lo riempie, altrimenti ne crea uno nuovo
+function addText(text,name){text=normalize(text);if(!text){toast('Nessun testo trovato');return}
+ if(!script.value.trim()){scripts[cur].text=text;scripts[cur].name=name||scripts[cur].name}else{scripts.push({id:Date.now(),text,name});cur=scripts.length-1}
+ loadScript();saveS();toast('Copione caricato · '+words()+' parole')}
+const loadJS=src=>new Promise((ok,ko)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>ko(new Error('Serve Internet per leggere questo tipo di file'));document.head.appendChild(s)});
+const ent=t=>t.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,'&');
+function docxText(x){return ent(x.replace(/<w:tab\/>/g,' ').replace(/<w:br[^>]*\/>/g,'\n').replace(/<\/w:p>/g,'\n').replace(/<[^>]+>/g,''))}
+async function readFile(f){
+ const n=f.name.toLowerCase();
+ if(n.endsWith('.docx')){await loadJS('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');const z=await JSZip.loadAsync(await f.arrayBuffer());const d=z.file('word/document.xml');if(!d)throw new Error('File Word non leggibile');return docxText(await d.async('string'))}
+ if(n.endsWith('.pdf')){const V='3.11.174';await loadJS('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/'+V+'/pdf.min.js');if(!window._pdfW){const w=await (await fetch('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/'+V+'/pdf.worker.min.js')).text();window._pdfW=URL.createObjectURL(new Blob([w],{type:'text/javascript'}))}pdfjsLib.GlobalWorkerOptions.workerSrc=window._pdfW;
+  const pdf=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;let out='';
+  for(let p=1;p<=pdf.numPages;p++){const c=await(await pdf.getPage(p)).getTextContent();let y=null,ex=0;for(const it of c.items){if(y!==null&&Math.abs(it.transform[5]-y)>2)out+='\n';else if(y!==null&&it.transform[4]-ex>(it.height||10)*.15&&!out.endsWith(' ')&&!it.str.startsWith(' '))out+=' ';out+=it.str;y=it.transform[5];ex=it.transform[4]+it.width}out+='\n\n'}
+  return out}
+ const t=await f.text();
+ if(n.endsWith('.rtf'))return t.replace(/\\par[d]?/g,'\n').replace(/\{\\\*[^}]*\}/g,'').replace(/\\'([0-9a-f]{2})/gi,(m,h)=>String.fromCharCode(parseInt(h,16))).replace(/\\[a-z]+-?\d* ?/gi,'').replace(/[{}]/g,'');
+ if(n.endsWith('.html')||n.endsWith('.htm'))return new DOMParser().parseFromString(t,'text/html').body.innerText||'';
+ return t}
+async function importFile(f){
+ if(/\.(pages|doc|key|odt)$/i.test(f.name)){toast('Salva il documento come Word (.docx) o PDF e riprova');return}
+ $('loading').hidden=false;
+ try{const t=await Promise.race([readFile(f),new Promise((_,ko)=>setTimeout(()=>ko(new Error('Non riesco a leggere il file: salvalo come Word o incolla il testo')),30000))]);addText(t,f.name.replace(/\.[^.]+$/,''))}catch(e){toast(e.message||'Non riesco a leggere il file')}
+ $('loading').hidden=true}
 $('import').onclick=()=>$('file').click();
-$('file').onchange=async e=>{const f=e.target.files[0];if(f){scripts.push({id:Date.now(),text:await f.text()});cur=scripts.length-1;loadScript();saveS();toast('Copione importato')}};
+$('file').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(f)importFile(f)};
+$('paste').onclick=async()=>{try{const t=await navigator.clipboard.readText();if(t&&t.trim())addText(t,'');else toast('Gli appunti sono vuoti: copia prima il testo')}catch{script.focus();toast('Tieni premuto nel riquadro e scegli Incolla')}};
+$('clear').onclick=()=>{if(script.value.trim()&&!confirm('Svuotare il copione?'))return;script.value='';scripts[cur].text='';scripts[cur].name='';stats();renderTabs();saveS()};
+['dragover','dragenter'].forEach(ev=>script.addEventListener(ev,e=>{e.preventDefault();script.classList.add('drop')}));
+['dragleave','drop'].forEach(ev=>script.addEventListener(ev,e=>{e.preventDefault();script.classList.remove('drop')}));
+script.addEventListener('drop',e=>{const f=e.dataTransfer&&e.dataTransfer.files[0];if(f)importFile(f);else{const t=e.dataTransfer&&e.dataTransfer.getData('text');if(t)addText(t,'')}});
 function syncSettings(){
  $('wpm').value=S.wpm;$('font').value=S.font;$('line').value=S.line;$('margin').value=S.margin;$('mirror').value=S.mirror;$('count').value=S.count;$('align').value=S.align;$('color').value=S.color;
  $('wpmv').textContent=S.wpm+' WPM';$('fontv').textContent=S.font+' px';$('linev').textContent=S.line;$('marginv').textContent=S.margin+'%';$('wpmBadge').textContent=S.wpm+' WPM';
@@ -319,6 +361,7 @@ function command(m){
  else if(a==='wpmd'){setWpm(S.wpm+v)}
  else if(a==='fontd'){setFont(S.font+v)}
  else if(a==='pos'){offset=v*maxOff();draw();broadcast()}
+ else if(a==='script'){addText(v.text,v.name||'Dal telefono')}
 }
 let bt=0;function broadcast(){const now=Date.now();if(now-bt<120&&running)return;bt=now;send({type:'state',running,open,wpm:S.wpm,pos:open?offset/maxOff():0,time:$('time').textContent})}
 setInterval(()=>{if(conn)broadcast()},1000);
