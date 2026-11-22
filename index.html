@@ -2,8 +2,8 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#080b09">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Traipler Prompt">
@@ -11,100 +11,320 @@
 <link rel="apple-touch-icon" href="./icon-192.png">
 <title>Traipler Teleprompter</title>
 <style>
-:root{--bg:#080b09;--panel:#111713;--panel2:#18221b;--line:#29372d;--green:#8ce0a0;--white:#f4f7f4;--muted:#91a096}
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--white);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input,textarea,select{font:inherit}button{cursor:pointer}
-.top{height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;border-bottom:1px solid var(--line);background:#0b100c}.brand{font-weight:850;display:flex;align-items:center;gap:10px;letter-spacing:.3px}.mark{width:29px;height:29px;border-radius:9px;background:var(--green);color:#09200f;display:grid;place-items:center}.brand small{display:block;color:var(--muted);font-size:9px;letter-spacing:1.5px}.muted{color:var(--muted);font-size:11px}
-.main{max-width:1500px;margin:auto;padding:15px;display:grid;grid-template-columns:330px minmax(0,1fr);gap:14px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;overflow:hidden}.editor{display:flex;flex-direction:column}.head{padding:14px 16px;border-bottom:1px solid var(--line)}h2{font-size:14px;margin:0}.hint{font-size:11px;color:var(--muted);margin-top:5px}
-textarea{width:100%;min-height:200px;resize:vertical;background:transparent;border:0;outline:0;color:var(--white);padding:15px;font-size:14px;line-height:1.6}
-.btn{border:1px solid var(--line);background:var(--panel2);color:var(--white);border-radius:9px;padding:9px 11px;font-size:12px;font-weight:650}.btn.primary{background:var(--green);border-color:var(--green);color:#09200f}.btn.ghost{background:transparent}.btn.round{width:42px;height:42px;border-radius:50%;padding:0;font-size:17px}
-.row{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.editfoot{padding:11px 15px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
-.settings{padding:13px 15px;display:grid;grid-template-columns:1fr 1fr;gap:12px;border-top:1px solid var(--line)}.field label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:7px}.field input[type=range]{width:100%;accent-color:var(--green)}select{width:100%;background:#0b100c;color:white;border:1px solid var(--line);border-radius:8px;padding:8px;font-size:11px}
-.stagepanel{display:flex;flex-direction:column;min-height:650px}.stagehead{padding:12px 15px;display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid var(--line)}.stage{position:relative;background:#000;flex:1;min-height:460px;overflow:hidden;display:flex;justify-content:center}.reading{width:100%;height:100%;position:relative;overflow:hidden}.scroller{position:absolute;top:0;left:7%;right:7%;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;text-align:center;color:white;font-weight:650;letter-spacing:.01em;line-height:1.5;padding-bottom:80vh;will-change:transform}.guide{position:absolute;top:30%;left:0;right:0;height:1px;background:#8ce0a025;pointer-events:none}.empty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#79847c;font-size:13px;pointer-events:none}.empty b{display:block;color:#aab5ac;margin-bottom:7px}
-.controls{padding:12px 15px;border-top:1px solid var(--line);display:flex;align-items:center;gap:11px;flex-wrap:wrap}.transport{display:flex;gap:7px}.progress{height:4px;flex:1;min-width:80px;background:#29332c;border-radius:8px;overflow:hidden}.progress i{display:block;height:100%;width:0;background:var(--green)}.time{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
-.pair{padding:12px 15px;border-top:1px solid var(--line);display:flex;align-items:center;gap:12px}.pair img{width:94px;height:94px;background:white;border-radius:8px;padding:4px}.pairinfo{font-size:11px;color:var(--muted);line-height:1.5}.pairinfo b{display:block;color:white;font-size:12px;margin-bottom:4px}.pairurl{color:var(--green);word-break:break-all}.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#d4f7dc;color:#102516;padding:10px 14px;border-radius:10px;font-size:12px;font-weight:700;opacity:0;transition:.2s;pointer-events:none}.toast.show{opacity:1}
-.remote{max-width:520px;margin:25px auto;padding:12px}.remote .panel{padding:18px}.remote h1{font-size:22px;margin:0 0 6px}.remote p{font-size:12px;color:var(--muted);margin:0 0 18px}.remote .big{width:100%;padding:18px;font-size:16px;border-radius:13px;margin:4px 0}.twocol{display:grid;grid-template-columns:1fr 1fr;gap:8px}.speedlabel{display:flex;justify-content:space-between;color:var(--muted);font-size:12px;margin:16px 0 8px}.remote input[type=range]{width:100%;accent-color:var(--green)}
-.fullscreen .top,.fullscreen .editor,.fullscreen .stagehead,.fullscreen .pair,.fullscreen .bottomhint{display:none!important}.fullscreen .main{display:block;padding:0;max-width:none}.fullscreen .stagepanel{border:0;border-radius:0;min-height:100dvh}.fullscreen .stage{min-height:calc(100dvh - 68px)}.fullscreen .controls{background:#090b09}
-@media(max-width:800px){.main{grid-template-columns:1fr;padding:9px}.stagepanel{min-height:560px}.editor textarea{min-height:160px}}
-@media(max-width:460px){.top{padding:0 11px}.stage{min-height:420px}.controls{justify-content:center}.progress{flex-basis:100%;order:3}.time{order:4}.pair img{width:82px;height:82px}}
+:root{--bg:#080b09;--panel:#111713;--panel2:#18221b;--line:#29372d;--green:#8ce0a0;--white:#f4f7f4;--muted:#91a096;--guide:30%}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--white);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overscroll-behavior:none}
+button,input,textarea,select{font:inherit;color:inherit}button{cursor:pointer;touch-action:manipulation}
+[hidden]{display:none!important}
+.btn{border:1px solid var(--line);background:var(--panel2);color:var(--white);border-radius:12px;padding:11px 14px;font-size:14px;font-weight:650;min-height:44px}
+.btn.primary{background:var(--green);border-color:var(--green);color:#09200f}
+.btn.ghost{background:transparent}
+.btn.danger{color:#ff9a9a}
+.muted{color:var(--muted);font-size:12px}
+
+/* ---------- editor ---------- */
+#editor{min-height:100%;display:flex;flex-direction:column;padding:max(10px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 2px 12px}
+.brand{font-weight:850;display:flex;align-items:center;gap:10px;letter-spacing:.3px}
+.mark{width:32px;height:32px;border-radius:10px;background:var(--green);color:#09200f;display:grid;place-items:center}
+.brand small{display:block;color:var(--muted);font-size:9px;letter-spacing:1.5px}
+.cols{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:12px;flex:1}
+@media(max-width:760px){.cols{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.card h2{font-size:13px;margin:0;padding:13px 15px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px;letter-spacing:.4px}
+.tabs{display:flex;gap:7px;overflow-x:auto;padding:10px 12px;border-bottom:1px solid var(--line)}
+.tab{flex:none;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid var(--line);background:var(--panel2);border-radius:999px;padding:8px 14px;font-size:13px}
+.tab.on{background:var(--green);color:#09200f;border-color:var(--green);font-weight:700}
+#script{display:block;width:100%;min-height:340px;height:48vh;resize:vertical;background:transparent;border:0;outline:0;padding:16px;font-size:17px;line-height:1.6}
+.foot{padding:10px 14px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.settings{padding:14px 15px;display:grid;grid-template-columns:1fr 1fr;gap:16px 14px}
+.field label{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:8px}.field b{color:var(--white)}
+.field input[type=range]{width:100%;accent-color:var(--green);height:28px}
+select{width:100%;background:#0b100c;border:1px solid var(--line);border-radius:10px;padding:11px;font-size:14px}
+.pair{padding:13px 15px;border-top:1px solid var(--line);display:flex;align-items:center;gap:12px}
+.pair img{width:96px;height:96px;background:#fff;border-radius:8px;padding:4px;flex:none}
+.pairinfo{font-size:12px;color:var(--muted);line-height:1.5}.pairinfo b{display:block;color:#fff;font-size:13px;margin-bottom:3px}
+.bigplay{margin-top:12px;width:100%;font-size:18px;padding:16px;border-radius:16px}
+
+/* ---------- teleprompter a tutto schermo (dentro l'app, senza API fullscreen) ---------- */
+#prompt{position:fixed;inset:0;z-index:50;background:#000;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+#pview{position:absolute;inset:0}
+#mir{position:absolute;inset:0;overflow:hidden}
+#scroller{position:absolute;left:0;right:0;top:0;will-change:transform;color:#fff;font-weight:700;letter-spacing:.005em}
+#txt{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}
+#guide{position:absolute;left:0;right:0;top:var(--guide);height:0;pointer-events:none;z-index:2}
+#guide:before,#guide:after{content:"";position:absolute;top:-14px;border:14px solid transparent}
+#guide:before{left:0;border-left-color:#ff4d4d;border-left-width:22px}
+#guide:after{right:0;border-right-color:#ff4d4d;border-right-width:22px}
+#guide i{position:absolute;left:30px;right:30px;top:-1px;height:2px;background:#ff4d4d55}
+#cd{position:absolute;inset:0;display:grid;place-items:center;font-size:30vmin;font-weight:800;color:#fff;background:#000a;z-index:5;pointer-events:none}
+.ui{position:absolute;left:0;right:0;z-index:6;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:10px max(14px,env(safe-area-inset-right)) 10px max(14px,env(safe-area-inset-left));background:linear-gradient(#000d,#0000);transition:opacity .25s}
+#utop{top:0;padding-top:max(12px,env(safe-area-inset-top))}
+#ubot{bottom:0;background:linear-gradient(#0000,#000e);padding-bottom:max(14px,env(safe-area-inset-bottom));flex-direction:column;gap:10px}
+.ui.off{opacity:0;pointer-events:none}
+.ui .btn{background:#1b241dcc;backdrop-filter:blur(6px);min-width:48px;min-height:48px}
+.ui .btn.primary{background:var(--green)}
+.row{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;width:100%}
+#seek{width:min(94%,900px);height:34px;accent-color:var(--green)}
+.badge{font-variant-numeric:tabular-nums;font-size:15px;font-weight:700;min-width:84px;text-align:center}
+.spacer{flex:1}
+
+/* ---------- telecomando ---------- */
+#remote{max-width:560px;margin:0 auto;padding:max(16px,env(safe-area-inset-top)) 14px 24px}
+#remote h1{font-size:22px;margin:6px 0 4px}
+#remote .big{width:100%;padding:20px 8px;font-size:17px;border-radius:16px}
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.sl{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;margin:18px 0 6px}.sl b{color:#fff}
+#remote input[type=range]{width:100%;accent-color:var(--green);height:36px}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#d4f7dc;color:#102516;padding:11px 15px;border-radius:12px;font-size:13px;font-weight:700;opacity:0;transition:.2s;pointer-events:none;z-index:99}.toast.show{opacity:1}
 </style>
 </head>
 <body>
-<header class="top"><div class="brand"><div class="mark">T</div><div>TRAIPLER<small>TELEPROMPTER</small></div></div><div class="row"><span class="muted" id="connection">● Avvio…</span><button class="btn ghost" id="fullscreen">⛶ Schermo intero</button></div></header>
-<div class="main" id="master">
-<section class="panel editor">
- <div class="head"><h2>Copione</h2><div class="hint">Incolla il testo o importa un file TXT</div></div>
- <textarea id="script" placeholder="Incolla qui il testo del tuo video…"></textarea>
- <div class="editfoot"><span id="stats">0 parole</span><div class="row"><button class="btn" id="import">＋ TXT</button><button class="btn" id="save">Salva</button><input hidden type="file" id="file" accept=".txt,.md"></div></div>
- <div class="settings">
-  <div class="field"><label>Velocità <b id="speedv">150 WPM</b></label><input id="speed" type="range" min="60" max="300" step="5" value="150"></div>
-  <div class="field"><label>Dimensione <b id="fontv">48 px</b></label><input id="font" type="range" min="24" max="100" value="48"></div>
-  <div class="field"><label>Interlinea</label><input id="line" type="range" min="1.1" max="2.1" step=".1" value="1.5"></div>
-  <div class="field"><label>Countdown</label><select id="count"><option value="0">Nessuno</option><option value="3">3 secondi</option><option value="5" selected>5 secondi</option><option value="10">10 secondi</option></select></div>
-  <div class="field"><label>Specchiatura</label><select id="mirror"><option value="none">Nessuna</option><option value="x" selected>Orizzontale (solo in play)</option><option value="y">Verticale</option><option value="both">Entrambe</option></select></div>
-  <div class="field"><label>Allineamento</label><select id="align"><option value="center">Centrato</option><option value="left">Sinistra</option></select></div>
-  <div class="field"><label>Margini <b id="marginv">7%</b></label><input id="margin" type="range" min="2" max="20" value="7"></div>
+
+<div id="editor">
+ <div class="top">
+  <div class="brand"><div class="mark">T</div><div>TRAIPLER<small>TELEPROMPTER</small></div></div>
+  <span class="muted" id="connection">● Avvio…</span>
  </div>
-</section>
-<section class="panel stagepanel">
- <div class="stagehead"><div><h2>Anteprima teleprompter</h2><div class="hint">Testo in scorrimento</div></div><button class="btn" id="top">↥ Inizio</button></div>
- <div class="stage" id="stage"><div class="reading" id="reading"><div class="scroller" id="scroller"></div></div><div class="guide"></div><div class="empty" id="empty"><div><b>Pronto per registrare?</b>Inserisci il copione e premi Play.</div></div></div>
- <div class="controls"><div class="transport"><button class="btn round" id="back">↶</button><button class="btn primary round" id="play">▶</button><button class="btn round" id="stop">■</button><button class="btn round" id="forward">↷</button></div><div class="progress"><i id="bar"></i></div><div class="time" id="time">00:00 / 00:00</div></div>
- <div class="pair"><img id="qr" alt="QR code telecomando"><div class="pairinfo"><b>Telecomando iPhone</b>Scansiona il QR con il telefono. Entrambi i dispositivi devono avere Internet durante il collegamento iniziale; i comandi viaggiano direttamente tra i dispositivi quando possibile.<div class="pairurl" id="pairurl">Preparazione QR…</div></div></div>
-</section></div>
-<div class="remote" id="remote" hidden><section class="panel"><h1>Telecomando Traipler</h1><p>Controllo remoto del teleprompter. Mantieni aperta questa pagina sul telefono.</p><div class="twocol"><button class="btn primary big" id="rplay">▶ Play / Pausa</button><button class="btn big" id="rstop">■ Stop</button><button class="btn big" id="rback">↶ Indietro 5s</button><button class="btn big" id="rforward">Avanti 5s ↷</button></div><div class="speedlabel"><span>Velocità di scorrimento</span><b id="rspeedv">150 WPM</b></div><input id="rspeed" type="range" min="60" max="300" step="5" value="150"><p id="rstatus" style="margin-top:16px">Connessione al tablet…</p></section></div>
+ <div class="cols">
+  <section class="card">
+   <h2>COPIONI <button class="btn" id="newScript">+ Nuovo</button></h2>
+   <div class="tabs" id="tabs"></div>
+   <textarea id="script" placeholder="Incolla qui il testo del tuo video…" autocapitalize="sentences"></textarea>
+   <div class="foot"><span class="muted" id="stats">0 parole</span>
+    <span style="display:flex;gap:8px"><button class="btn" id="import">+ File TXT</button><button class="btn danger" id="del">Elimina</button><input hidden type="file" id="file" accept=".txt,.md"></span></div>
+  </section>
+  <div>
+   <section class="card">
+    <h2>IMPOSTAZIONI</h2>
+    <div class="settings">
+     <div class="field"><label>Velocità <b id="wpmv"></b></label><input id="wpm" type="range" min="20" max="250" step="1"></div>
+     <div class="field"><label>Dimensione testo <b id="fontv"></b></label><input id="font" type="range" min="28" max="160"></div>
+     <div class="field"><label>Interlinea <b id="linev"></b></label><input id="line" type="range" min="1.1" max="2.2" step=".05"></div>
+     <div class="field"><label>Margini <b id="marginv"></b></label><input id="margin" type="range" min="2" max="25"></div>
+     <div class="field"><label>Specchiatura</label><select id="mirror"><option value="1">Sì (per vetro teleprompter)</option><option value="0">No</option></select></div>
+     <div class="field"><label>Conto alla rovescia</label><select id="count"><option value="0">Nessuno</option><option value="3">3 secondi</option><option value="5">5 secondi</option><option value="10">10 secondi</option></select></div>
+     <div class="field"><label>Allineamento</label><select id="align"><option value="center">Centrato</option><option value="left">Sinistra</option></select></div>
+     <div class="field"><label>Colore testo</label><select id="color"><option value="#ffffff">Bianco</option><option value="#ffe14d">Giallo</option><option value="#8ce0a0">Verde</option></select></div>
+    </div>
+    <div class="pair"><img id="qr" alt="QR telecomando"><div class="pairinfo"><b>Telecomando iPhone</b>Inquadra il QR con l'iPhone. Serve Internet su entrambi solo per collegarli.<div id="pairurl" style="word-break:break-all;color:var(--green);margin-top:4px;font-size:11px"></div></div></div>
+   </section>
+   <button class="btn primary bigplay" id="open">▶ Apri teleprompter</button>
+  </div>
+ </div>
+</div>
+
+<div id="prompt" hidden>
+ <div id="pview"><div id="mir"><div id="scroller"><div id="txt"></div></div></div></div>
+ <div id="guide"><i></i></div>
+ <div id="cd" hidden></div>
+ <div class="ui" id="utop">
+  <button class="btn" id="back">← Modifica</button>
+  <span class="badge" id="time">00:00 / 00:00</span>
+  <button class="btn" id="fm">A−</button><button class="btn" id="fp">A+</button>
+  <button class="btn" id="mirrorBtn">⇋ Specchia</button>
+ </div>
+ <div class="ui" id="ubot">
+  <input id="seek" type="range" min="0" max="1000" value="0" aria-label="Posizione">
+  <div class="row">
+   <button class="btn" id="toStart">Inizio</button>
+   <button class="btn" id="rew">−10 s</button>
+   <button class="btn primary" id="play" style="min-width:84px;font-size:22px">▶</button>
+   <button class="btn" id="fwd">+10 s</button>
+   <span class="spacer"></span>
+   <button class="btn" id="sm">−</button><span class="badge" id="wpmBadge">150 WPM</span><button class="btn" id="sp">+</button>
+  </div>
+ </div>
+</div>
+
+<div id="remote" hidden>
+ <h1>Telecomando Traipler</h1><div class="muted" id="rstatus">Connessione all'iPad…</div>
+ <div class="twocol" style="margin-top:16px"><button class="btn primary big" id="rplay">▶ Play / Pausa</button><button class="btn big" id="ropen">Apri teleprompter</button></div>
+ <div class="sl"><span>Posizione nel testo</span><b id="rposv">0%</b></div><input id="rpos" type="range" min="0" max="1000" value="0">
+ <div class="twocol"><button class="btn big" id="rrew">−10 s</button><button class="btn big" id="rfwd">+10 s</button><button class="btn big" id="rstart">Dall'inizio</button><button class="btn big" id="rmirror">⇋ Specchia</button></div>
+ <div class="sl"><span>Velocità</span><b id="rwpmv">150 WPM</b></div>
+ <div class="twocol"><button class="btn big" id="rslow">− più lento</button><button class="btn big" id="rfast">+ più veloce</button></div>
+ <div class="twocol"><button class="btn big" id="rfm">A− testo</button><button class="btn big" id="rfp">A+ testo</button></div>
+</div>
 <div class="toast" id="toast"></div>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 (()=>{
 const $=id=>document.getElementById(id),remoteMode=new URLSearchParams(location.search).has('remote');
-if(remoteMode){$('master').hidden=true;$('remote').hidden=false;$('fullscreen').style.display='none'}
-let peer=null,conn=null,peerId='',role=remoteMode?'remote':'master',running=false,offset=0,last=0,raf=0,countdown=null;
-function toast(s){let t=$('toast');t.textContent=s;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800)}
-function send(obj){if(conn&&conn.open)conn.send(obj)}
+const GUIDE=.30; // il testo si legge sulla riga a 30% dall'alto
+const DEF={wpm:110,font:64,line:1.5,margin:7,mirror:'1',count:'3',align:'center',color:'#ffffff'};
+let S={...DEF},scripts=[],cur=0;
+try{Object.assign(S,JSON.parse(localStorage.getItem('tp-settings')||'{}'))}catch{}
+try{scripts=JSON.parse(localStorage.getItem('tp-scripts')||'[]')}catch{}
+if(!scripts.length){let old='';try{old=localStorage.getItem('traipler-script')||''}catch{}scripts=[{id:Date.now(),text:old}]}
+try{cur=Math.min(scripts.length-1,+localStorage.getItem('tp-cur')||0)}catch{}
+const saveS=()=>{try{localStorage.setItem('tp-settings',JSON.stringify(S));localStorage.setItem('tp-scripts',JSON.stringify(scripts));localStorage.setItem('tp-cur',cur)}catch{}};
+function toast(s){const t=$('toast');t.textContent=s;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800)}
+const fmt=s=>{s=Math.max(0,Math.round(s));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
+
+/* ---------- collegamento iPad <-> iPhone ---------- */
+let peer=null,conn=null;
+function send(m){if(conn&&conn.open)try{conn.send(m)}catch{}}
 function setupPeer(){
- if(!window.Peer){if(remoteMode)$('rstatus').textContent='Impossibile caricare il servizio di collegamento. Verifica Internet.';else $('connection').textContent='Libreria connessione non disponibile';return}
- if(role==='master'){
-  peer=new Peer('tp-'+Math.random().toString(36).slice(2,12),{debug:0});
-  peer.on('open',id=>{peerId=id;$('connection').textContent='● QR pronto · in attesa';let url=location.href.split('?')[0]+'?remote='+encodeURIComponent(id);$('pairurl').textContent=url;$('qr').src='https://api.qrserver.com/v1/create-qr-code/?size=220x220&data='+encodeURIComponent(url)});
-  peer.on('connection',c=>{if(conn){c.close();return}conn=c;wireMaster();$('connection').textContent='● iPhone collegato';});
+ if(!window.Peer){if(remoteMode)$('rstatus').textContent='Servizio di collegamento non raggiungibile: serve Internet.';else $('connection').textContent='Senza Internet: telecomando non disponibile';return}
+ if(!remoteMode){
+  peer=new Peer(undefined,{debug:0});
+  peer.on('open',id=>{$('connection').textContent='● QR pronto';const url=location.href.split('?')[0].split('#')[0]+'?remote='+encodeURIComponent(id);$('pairurl').textContent=url;$('qr').src='https://api.qrserver.com/v1/create-qr-code/?size=240x240&data='+encodeURIComponent(url)});
+  peer.on('connection',c=>{if(conn&&conn.open){c.close();return}conn=c;c.on('data',m=>{if(m&&m.type==='cmd')command(m)});c.on('open',()=>{$('connection').textContent='● iPhone collegato';broadcast()});c.on('close',()=>{conn=null;$('connection').textContent='● QR pronto'})});
   peer.on('error',e=>{$('connection').textContent='Connessione: '+e.type});
  }else{
-  const id=new URLSearchParams(location.search).get('remote');if(!id){$('rstatus').textContent='Codice sessione mancante';return}
-  peer=new Peer(undefined,{debug:0});peer.on('open',()=>{conn=peer.connect(id,{reliable:true});conn.on('open',()=>{$('rstatus').textContent='● Collegato al tablet';sendStateRequest()});conn.on('data',m=>remoteReceive(m));conn.on('close',()=>{$('rstatus').textContent='Connessione interrotta'});});
+  const id=new URLSearchParams(location.search).get('remote');if(!id){$('rstatus').textContent='Codice mancante';return}
+  peer=new Peer(undefined,{debug:0});
+  peer.on('open',()=>{conn=peer.connect(id,{reliable:true});conn.on('open',()=>{$('rstatus').textContent='● Collegato all\'iPad'});conn.on('data',m=>{if(m&&m.type==='state')remoteState(m)});conn.on('close',()=>{$('rstatus').textContent='Connessione interrotta: ricarica la pagina'})});
   peer.on('error',e=>{$('rstatus').textContent='Connessione non riuscita: '+e.type});
  }
 }
-function wireMaster(){conn.on('data',m=>{if(m.type==='cmd')command(m.action,m.value)});conn.on('close',()=>{conn=null;$('connection').textContent='● QR pronto · in attesa'});broadcast()}
-function sendStateRequest(){send({type:'request'})}
-function broadcast(){send({type:'state',running,offset,speed:role==='master'?+$('speed').value:150})}
-function remoteReceive(m){if(m.type==='state'){$('rplay').textContent=m.running?'Ⅱ Pausa':'▶ Play';$('rspeed').value=m.speed;$('rspeedv').textContent=m.speed+' WPM';$('rstatus').textContent=m.running?'● In riproduzione':'● Collegato · in pausa'}}
-function command(a,v){if(a==='toggle')play();if(a==='stop')stop();if(a==='seek')seek(v);if(a==='speed'){$('speed').value=v;layout()}}
-if(role==='remote'){
- setupPeer();$('rplay').onclick=()=>send({type:'cmd',action:'toggle'});$('rstop').onclick=()=>send({type:'cmd',action:'stop'});$('rback').onclick=()=>send({type:'cmd',action:'seek',value:-5});$('rforward').onclick=()=>send({type:'cmd',action:'seek',value:5});$('rspeed').oninput=()=>{$('rspeedv').textContent=$('rspeed').value+' WPM';send({type:'cmd',action:'speed',value:+$('rspeed').value})};return
+
+/* ---------- telecomando iPhone ---------- */
+if(remoteMode){
+ $('editor').hidden=true;$('remote').hidden=false;
+ const c=(action,value)=>()=>send({type:'cmd',action,value});
+ $('rplay').onclick=c('toggle');$('ropen').onclick=c('open');$('rrew').onclick=c('seek',-10);$('rfwd').onclick=c('seek',10);$('rstart').onclick=c('start');
+ $('rmirror').onclick=c('mirror');$('rslow').onclick=c('wpmd',-5);$('rfast').onclick=c('wpmd',5);$('rfm').onclick=c('fontd',-4);$('rfp').onclick=c('fontd',4);
+ let dragging=false;$('rpos').oninput=()=>{dragging=true;$('rposv').textContent=Math.round($('rpos').value/10)+'%';send({type:'cmd',action:'pos',value:$('rpos').value/1000})};$('rpos').onchange=()=>{dragging=false};
+ window.remoteState=m=>{$('rplay').textContent=m.running?'Ⅱ Pausa':'▶ Play';$('rwpmv').textContent=m.wpm+' WPM';if(!dragging){$('rpos').value=Math.round(m.pos*1000);$('rposv').textContent=Math.round(m.pos*100)+'%'}$('rstatus').textContent=(m.open?(m.running?'● In riproduzione':'● In pausa'):'● Collegato · teleprompter chiuso')+' · '+m.time};
+ try{navigator.wakeLock&&navigator.wakeLock.request('screen')}catch{}
+ setupPeer();return;
 }
-const script=$('script'),scroller=$('scroller'),stage=$('stage'),reading=$('reading');
-function words(){return script.value.trim()?script.value.trim().split(/\s+/).length:0}
-function fmt(s){s=Math.max(0,Math.floor(s||0));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
-function maxOffset(){return Math.max(0,scroller.scrollHeight-stage.clientHeight*.68)}
-function draw(){scroller.style.transform=`translateY(${-offset}px)`;let max=maxOffset(),duration=Math.max(1,words()/(+$('speed').value)*60);$('bar').style.width=(max?Math.min(100,offset/max*100):0)+'%';$('time').textContent=fmt(offset/Math.max(1,max)*duration)+' / '+fmt(duration)}
-function layout(){scroller.textContent=script.value.trim();$('empty').style.display=script.value.trim()?'none':'grid';scroller.style.fontSize=$('font').value+'px';scroller.style.lineHeight=$('line').value;scroller.style.textAlign=$('align').value;scroller.style.left=$('margin').value+'%';scroller.style.right=$('margin').value+'%';let m=(running||countdown)?$('mirror').value:'none';reading.style.transform=m==='x'?'scaleX(-1)':m==='y'?'scaleY(-1)':m==='both'?'scale(-1,-1)':'';$('speedv').textContent=$('speed').value+' WPM';$('fontv').textContent=$('font').value+' px';$('marginv').textContent=$('margin').value+'%';$('stats').textContent=words()+' parole · '+Math.ceil(words()/(+$('speed').value))+' min stimati';requestAnimationFrame(()=>{draw();broadcast()})}
-function pause(){running=false;cancelAnimationFrame(raf);$('play').textContent='▶';layout()}
-function tick(ts){if(!running)return;if(!last)last=ts;let dt=Math.min(80,ts-last);last=ts;offset+=(+$('speed').value)*(+$('font').value)*1.5/60*dt/1000;if(offset>=maxOffset()){offset=maxOffset();pause()}draw();if(running)raf=requestAnimationFrame(tick)}
-function start(){if(!script.value.trim())return toast('Inserisci prima un copione');running=true;last=0;$('play').textContent='Ⅱ';raf=requestAnimationFrame(tick);layout()}
-function play(){if(running){pause();return}if(countdown){clearInterval(countdown);countdown=null}if(offset>=maxOffset())offset=0;let n=offset===0?+$('count').value:0;if(n){$('play').textContent=n;layout();countdown=setInterval(()=>{n--;$('play').textContent=n||'▶';if(n<=0){clearInterval(countdown);countdown=null;start()}},1000)}else start()}
-function stop(){pause();if(countdown){clearInterval(countdown);countdown=null}$('play').textContent='▶';offset=0;layout()}
-function seek(s){pause();offset=Math.max(0,Math.min(maxOffset(),offset+s*(+$('speed').value)*(+$('font').value)*1.5/60));draw();broadcast()}
-$('play').onclick=play;$('stop').onclick=stop;$('back').onclick=()=>seek(-5);$('forward').onclick=()=>seek(5);$('top').onclick=stop;
-script.oninput=()=>{pause();offset=0;layout()};['speed','font','line','mirror','align','margin'].forEach(id=>$(id).oninput=layout);
-$('import').onclick=()=>$('file').click();$('file').onchange=async e=>{let f=e.target.files[0];if(f){script.value=await f.text();layout();toast('Copione importato')}};
-$('save').onclick=()=>{localStorage.setItem('traipler-script',script.value);toast('Copione salvato su iPad')};
-try{script.value=localStorage.getItem('traipler-script')||''}catch{}
-$('fullscreen').onclick=()=>{if(!document.fullscreenElement)document.documentElement.requestFullscreen?.();else document.exitFullscreen?.()};
-document.addEventListener('fullscreenchange',()=>{document.body.classList.toggle('fullscreen',!!document.fullscreenElement);$('fullscreen').textContent=document.fullscreenElement?'⤢ Esci':'⛶ Schermo intero';setTimeout(draw,100)});
-document.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName))return;if(e.code==='Space'){e.preventDefault();play()}else if(e.key==='ArrowLeft')seek(-5);else if(e.key==='ArrowRight')seek(5);else if(e.key==='Home')stop();else if(e.key.toLowerCase()==='f')$('fullscreen').click()});
-window.addEventListener('resize',draw);
-if('serviceWorker' in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
-layout();setupPeer();
+
+/* ---------- editor e copioni ---------- */
+const script=$('script');
+function words(){const t=script.value.trim();return t?t.split(/\s+/).length:0}
+function title(s,i){const l=(s.text||'').trim().split('\n')[0].slice(0,28);return l||('Copione '+(i+1))}
+function renderTabs(){$('tabs').innerHTML='';scripts.forEach((s,i)=>{const b=document.createElement('button');b.className='tab'+(i===cur?' on':'');b.textContent=title(s,i);b.onclick=()=>{cur=i;loadScript();saveS()};$('tabs').appendChild(b)})}
+function loadScript(){script.value=scripts[cur].text;renderTabs();stats()}
+function stats(){const w=words();$('stats').textContent=w+' parole · circa '+Math.max(1,Math.round(w/S.wpm))+' min a '+S.wpm+' WPM'}
+script.oninput=()=>{scripts[cur].text=script.value;stats();saveS();clearTimeout(script._t);script._t=setTimeout(renderTabs,400)};
+$('newScript').onclick=()=>{scripts.push({id:Date.now(),text:''});cur=scripts.length-1;loadScript();saveS();script.focus()};
+$('del').onclick=()=>{if(!confirm('Eliminare questo copione?'))return;scripts.splice(cur,1);if(!scripts.length)scripts=[{id:Date.now(),text:''}];cur=Math.max(0,Math.min(cur,scripts.length-1));loadScript();saveS()};
+$('import').onclick=()=>$('file').click();
+$('file').onchange=async e=>{const f=e.target.files[0];if(f){scripts.push({id:Date.now(),text:await f.text()});cur=scripts.length-1;loadScript();saveS();toast('Copione importato')}};
+function syncSettings(){
+ $('wpm').value=S.wpm;$('font').value=S.font;$('line').value=S.line;$('margin').value=S.margin;$('mirror').value=S.mirror;$('count').value=S.count;$('align').value=S.align;$('color').value=S.color;
+ $('wpmv').textContent=S.wpm+' WPM';$('fontv').textContent=S.font+' px';$('linev').textContent=S.line;$('marginv').textContent=S.margin+'%';$('wpmBadge').textContent=S.wpm+' WPM';
+}
+['wpm','font','line','margin'].forEach(k=>$(k).oninput=()=>{S[k]=+$(k).value;syncSettings();applyStyle();stats();saveS()});
+['mirror','count','align','color'].forEach(k=>$(k).onchange=()=>{S[k]=$(k).value;syncSettings();applyStyle();saveS()});
+
+/* ---------- teleprompter ---------- */
+let open=false,running=false,offset=0,raf=0,lastT=0,cdTimer=null,hideT=null,wake=null,vel=0;
+const pview=$('pview'),scroller=$('scroller'),txt=$('txt');
+function applyStyle(){
+ const h=pview.clientHeight||innerHeight;
+ txt.style.fontSize=S.font+'px';txt.style.lineHeight=S.line;txt.style.textAlign=S.align;txt.style.color=S.color;
+ scroller.style.padding=`${Math.round(h*GUIDE)}px ${S.margin}% ${Math.round(h*(1-GUIDE))}px`;
+ $('mir').style.transform=(open&&S.mirror==='1')?'scaleX(-1)':'';
+ draw();
+}
+function textH(){return txt.offsetHeight}
+function maxOff(){return Math.max(1,textH())}
+// px al secondo: dalla velocita' in parole al minuto e dalla densita' vera del testo
+function pxs(){const w=Math.max(1,words());return (S.wpm/60)*(textH()/w)}
+function draw(){
+ offset=Math.max(0,Math.min(maxOff(),offset));
+ scroller.style.transform=`translateY(${-offset}px)`;
+ const dur=words()/S.wpm*60,pos=offset/maxOff();
+ $('time').textContent=fmt(pos*dur)+' / '+fmt(dur);
+ if(!seeking)$('seek').value=Math.round(pos*1000);
+ $('wpmBadge').textContent=S.wpm+' WPM';
+}
+let seeking=false;
+function tick(t){
+ if(!running)return;
+ if(!lastT)lastT=t;const dt=Math.min(.1,(t-lastT)/1000);lastT=t;
+ offset+=pxs()*dt;
+ if(offset>=maxOff()){offset=maxOff();pausePlay();draw();broadcast();return}
+ draw();raf=requestAnimationFrame(tick);
+}
+function startPlay(){if(!words())return toast('Scrivi prima il copione');running=true;lastT=0;$('play').textContent='Ⅱ';cancelAnimationFrame(raf);raf=requestAnimationFrame(tick);showUI(true);broadcast()}
+function pausePlay(){running=false;cancelAnimationFrame(raf);$('play').textContent='▶';showUI(true);broadcast()}
+function clearCd(){if(cdTimer){clearInterval(cdTimer);cdTimer=null}$('cd').hidden=true}
+function togglePlay(){
+ if(cdTimer){clearCd();$('play').textContent='▶';return}
+ if(running){pausePlay();return}
+ if(offset>=maxOff()-1)offset=0;
+ let n=offset<5?+S.count:0;
+ if(n){$('cd').hidden=false;$('cd').textContent=n;$('play').textContent='Ⅱ';cdTimer=setInterval(()=>{n--;if(n<=0){clearCd();startPlay()}else $('cd').textContent=n},1000)}
+ else startPlay();
+}
+function seekSec(s){offset+=pxs()*s;draw();broadcast()}
+function toStart(){clearCd();offset=0;draw();broadcast()}
+function showUI(stay){
+ ['utop','ubot'].forEach(i=>$(i).classList.remove('off'));clearTimeout(hideT);
+ if(running&&!stay)hideT=setTimeout(()=>{if(running&&!seeking)['utop','ubot'].forEach(i=>$(i).classList.add('off'))},3500);
+}
+async function lock(){try{if(navigator.wakeLock)wake=await navigator.wakeLock.request('screen')}catch{}}
+function openPrompt(){
+ open=true;$('prompt').hidden=false;txt.textContent=script.value.trim();
+ try{const e=document.documentElement;(e.requestFullscreen||e.webkitRequestFullscreen||(()=>{})).call(e)}catch{}
+ lock();requestAnimationFrame(()=>{applyStyle();showUI(true);broadcast()})
+}
+function closePrompt(){
+ clearCd();pausePlay();open=false;$('prompt').hidden=true;applyStyle();
+ try{if(document.fullscreenElement)document.exitFullscreen()}catch{}
+ try{wake&&wake.release()}catch{};broadcast()
+}
+document.addEventListener('visibilitychange',()=>{if(open&&document.visibilityState==='visible')lock()});
+
+/* trascinare il testo con il dito (anche mentre scorre), con inerzia; un tocco = play/pausa */
+let drag=null;
+pview.addEventListener('pointerdown',e=>{
+ pview.setPointerCapture(e.pointerId);
+ drag={y:e.clientY,off:offset,t:performance.now(),moved:false,was:running,ly:e.clientY,lt:performance.now()};
+ vel=0;if(running){running=false;cancelAnimationFrame(raf)}
+});
+pview.addEventListener('pointermove',e=>{
+ if(!drag)return;const dy=e.clientY-drag.y;
+ if(Math.abs(dy)>8)drag.moved=true;
+ if(drag.moved){offset=drag.off-dy;const now=performance.now(),dt=now-drag.lt;if(dt>0){vel=(drag.ly-e.clientY)/dt;drag.ly=e.clientY;drag.lt=now}draw();showUI(true)}
+});
+function endDrag(){
+ if(!drag)return;const d=drag;drag=null;
+ if(!d.moved){ // tocco
+  if(d.was){running=true;pausePlay()}else togglePlay();return}
+ const fling=()=>{if(drag||Math.abs(vel)<.02){if(d.was&&!drag){startPlay()}else broadcast();return}offset+=vel*16;vel*=.94;draw();requestAnimationFrame(fling)};
+ fling();
+}
+pview.addEventListener('pointerup',endDrag);pview.addEventListener('pointercancel',endDrag);
+pview.addEventListener('wheel',e=>{e.preventDefault();offset+=e.deltaY;draw();showUI()},{passive:false});
+$('seek').addEventListener('input',()=>{seeking=true;offset=$('seek').value/1000*maxOff();draw();showUI(true)});
+$('seek').addEventListener('change',()=>{seeking=false;broadcast();showUI()});
+$('play').onclick=e=>{e.stopPropagation();togglePlay()};
+$('toStart').onclick=toStart;$('rew').onclick=()=>seekSec(-10);$('fwd').onclick=()=>seekSec(10);
+$('back').onclick=closePrompt;
+const setWpm=v=>{S.wpm=Math.max(20,Math.min(250,v));syncSettings();stats();saveS();draw();broadcast()};
+$('sm').onclick=()=>setWpm(S.wpm-5);$('sp').onclick=()=>setWpm(S.wpm+5);
+const setFont=v=>{const keep=offset/maxOff();S.font=Math.max(28,Math.min(160,v));syncSettings();applyStyle();offset=keep*maxOff();draw();saveS()};
+$('fm').onclick=()=>setFont(S.font-4);$('fp').onclick=()=>setFont(S.font+4);
+const toggleMirror=()=>{S.mirror=S.mirror==='1'?'0':'1';syncSettings();applyStyle();saveS();broadcast()};
+$('mirrorBtn').onclick=toggleMirror;
+$('open').onclick=openPrompt;
+document.addEventListener('keydown',e=>{if(!open)return;if(e.code==='Space'){e.preventDefault();togglePlay()}else if(e.code==='ArrowDown')seekSec(5);else if(e.code==='ArrowUp')seekSec(-5);else if(e.code==='Escape')closePrompt()});
+['utop','ubot'].forEach(i=>{$(i).addEventListener('pointerdown',e=>{e.stopPropagation();showUI(true)});$(i).addEventListener('pointerup',()=>showUI())});
+window.addEventListener('resize',()=>{if(open){const k=offset/maxOff();applyStyle();offset=k*maxOff();draw()}});
+
+/* comandi dal telecomando */
+function command(m){
+ const a=m.action,v=m.value;
+ if(a==='open'){if(!open)openPrompt()}
+ else if(a==='toggle'){if(!open)openPrompt();setTimeout(togglePlay,open?0:300)}
+ else if(a==='seek'){seekSec(v)}
+ else if(a==='start'){toStart()}
+ else if(a==='mirror'){toggleMirror()}
+ else if(a==='wpmd'){setWpm(S.wpm+v)}
+ else if(a==='fontd'){setFont(S.font+v)}
+ else if(a==='pos'){offset=v*maxOff();draw();broadcast()}
+}
+let bt=0;function broadcast(){const now=Date.now();if(now-bt<120&&running)return;bt=now;send({type:'state',running,open,wpm:S.wpm,pos:open?offset/maxOff():0,time:$('time').textContent})}
+setInterval(()=>{if(conn)broadcast()},1000);
+
+syncSettings();loadScript();setupPeer();
 })();
 </script>
-</body></html>
+</body>
+</html>
