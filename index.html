@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080b09">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Traipler Prompt">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<title>Traipler Teleprompter</title>
+<style>
+:root{--bg:#080b09;--panel:#111713;--panel2:#18221b;--line:#29372d;--green:#8ce0a0;--white:#f4f7f4;--muted:#91a096}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--white);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input,textarea,select{font:inherit}button{cursor:pointer}
+.top{height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;border-bottom:1px solid var(--line);background:#0b100c}.brand{font-weight:850;display:flex;align-items:center;gap:10px;letter-spacing:.3px}.mark{width:29px;height:29px;border-radius:9px;background:var(--green);color:#09200f;display:grid;place-items:center}.brand small{display:block;color:var(--muted);font-size:9px;letter-spacing:1.5px}.muted{color:var(--muted);font-size:11px}
+.main{max-width:1500px;margin:auto;padding:15px;display:grid;grid-template-columns:330px minmax(0,1fr);gap:14px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;overflow:hidden}.editor{display:flex;flex-direction:column}.head{padding:14px 16px;border-bottom:1px solid var(--line)}h2{font-size:14px;margin:0}.hint{font-size:11px;color:var(--muted);margin-top:5px}
+textarea{width:100%;min-height:200px;resize:vertical;background:transparent;border:0;outline:0;color:var(--white);padding:15px;font-size:14px;line-height:1.6}
+.btn{border:1px solid var(--line);background:var(--panel2);color:var(--white);border-radius:9px;padding:9px 11px;font-size:12px;font-weight:650}.btn.primary{background:var(--green);border-color:var(--green);color:#09200f}.btn.ghost{background:transparent}.btn.round{width:42px;height:42px;border-radius:50%;padding:0;font-size:17px}
+.row{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.editfoot{padding:11px 15px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+.settings{padding:13px 15px;display:grid;grid-template-columns:1fr 1fr;gap:12px;border-top:1px solid var(--line)}.field label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:7px}.field input[type=range]{width:100%;accent-color:var(--green)}select{width:100%;background:#0b100c;color:white;border:1px solid var(--line);border-radius:8px;padding:8px;font-size:11px}
+.stagepanel{display:flex;flex-direction:column;min-height:650px}.stagehead{padding:12px 15px;display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid var(--line)}.stage{position:relative;background:#000;flex:1;min-height:460px;overflow:hidden;display:flex;justify-content:center}.reading{width:100%;height:100%;position:relative;overflow:hidden}.scroller{position:absolute;top:0;left:7%;right:7%;white-space:pre-wrap;text-align:center;color:white;font-weight:650;letter-spacing:.01em;line-height:1.5;padding-bottom:80vh;will-change:transform}.guide{position:absolute;top:30%;left:0;right:0;height:1px;background:#8ce0a025;pointer-events:none}.empty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#79847c;font-size:13px;pointer-events:none}.empty b{display:block;color:#aab5ac;margin-bottom:7px}
+.controls{padding:12px 15px;border-top:1px solid var(--line);display:flex;align-items:center;gap:11px;flex-wrap:wrap}.transport{display:flex;gap:7px}.progress{height:4px;flex:1;min-width:80px;background:#29332c;border-radius:8px;overflow:hidden}.progress i{display:block;height:100%;width:0;background:var(--green)}.time{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.pair{padding:12px 15px;border-top:1px solid var(--line);display:flex;align-items:center;gap:12px}.pair img{width:94px;height:94px;background:white;border-radius:8px;padding:4px}.pairinfo{font-size:11px;color:var(--muted);line-height:1.5}.pairinfo b{display:block;color:white;font-size:12px;margin-bottom:4px}.pairurl{color:var(--green);word-break:break-all}.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#d4f7dc;color:#102516;padding:10px 14px;border-radius:10px;font-size:12px;font-weight:700;opacity:0;transition:.2s;pointer-events:none}.toast.show{opacity:1}
+.remote{max-width:520px;margin:25px auto;padding:12px}.remote .panel{padding:18px}.remote h1{font-size:22px;margin:0 0 6px}.remote p{font-size:12px;color:var(--muted);margin:0 0 18px}.remote .big{width:100%;padding:18px;font-size:16px;border-radius:13px;margin:4px 0}.twocol{display:grid;grid-template-columns:1fr 1fr;gap:8px}.speedlabel{display:flex;justify-content:space-between;color:var(--muted);font-size:12px;margin:16px 0 8px}.remote input[type=range]{width:100%;accent-color:var(--green)}
+.fullscreen .top,.fullscreen .editor,.fullscreen .stagehead,.fullscreen .pair,.fullscreen .bottomhint{display:none!important}.fullscreen .main{display:block;padding:0;max-width:none}.fullscreen .stagepanel{border:0;border-radius:0;min-height:100dvh}.fullscreen .stage{min-height:calc(100dvh - 68px)}.fullscreen .controls{background:#090b09}
+@media(max-width:800px){.main{grid-template-columns:1fr;padding:9px}.stagepanel{min-height:560px}.editor textarea{min-height:160px}}
+@media(max-width:460px){.top{padding:0 11px}.stage{min-height:420px}.controls{justify-content:center}.progress{flex-basis:100%;order:3}.time{order:4}.pair img{width:82px;height:82px}}
+</style>
+</head>
+<body>
+<header class="top"><div class="brand"><div class="mark">T</div><div>TRAIPLER<small>TELEPROMPTER</small></div></div><div class="row"><span class="muted" id="connection">● Avvio…</span><button class="btn ghost" id="fullscreen">⛶ Schermo intero</button></div></header>
+<div class="main" id="master">
+<section class="panel editor">
+ <div class="head"><h2>Copione</h2><div class="hint">Incolla il testo o importa un file TXT</div></div>
+ <textarea id="script" placeholder="Incolla qui il testo del tuo video…"></textarea>
+ <div class="editfoot"><span id="stats">0 parole</span><div class="row"><button class="btn" id="import">＋ TXT</button><button class="btn" id="save">Salva</button><input hidden type="file" id="file" accept=".txt,.md"></div></div>
+ <div class="settings">
+  <div class="field"><label>Velocità <b id="speedv">150 WPM</b></label><input id="speed" type="range" min="60" max="300" step="5" value="150"></div>
+  <div class="field"><label>Dimensione <b id="fontv">48 px</b></label><input id="font" type="range" min="24" max="100" value="48"></div>
+  <div class="field"><label>Interlinea</label><input id="line" type="range" min="1.1" max="2.1" step=".1" value="1.5"></div>
+  <div class="field"><label>Countdown</label><select id="count"><option value="0">Nessuno</option><option value="3">3 secondi</option><option value="5" selected>5 secondi</option><option value="10">10 secondi</option></select></div>
+  <div class="field"><label>Specchiatura</label><select id="mirror"><option value="none">Normale</option><option value="x">Orizzontale</option><option value="y">Verticale</option><option value="both">Entrambe</option></select></div>
+  <div class="field"><label>Allineamento</label><select id="align"><option value="center">Centrato</option><option value="left">Sinistra</option></select></div>
+  <div class="field"><label>Margini <b id="marginv">7%</b></label><input id="margin" type="range" min="2" max="20" value="7"></div>
+ </div>
+</section>
+<section class="panel stagepanel">
+ <div class="stagehead"><div><h2>Anteprima teleprompter</h2><div class="hint">Testo in scorrimento</div></div><button class="btn" id="top">↥ Inizio</button></div>
+ <div class="stage" id="stage"><div class="reading" id="reading"><div class="scroller" id="scroller"></div></div><div class="guide"></div><div class="empty" id="empty"><div><b>Pronto per registrare?</b>Inserisci il copione e premi Play.</div></div></div>
+ <div class="controls"><div class="transport"><button class="btn round" id="back">↶</button><button class="btn primary round" id="play">▶</button><button class="btn round" id="stop">■</button><button class="btn round" id="forward">↷</button></div><div class="progress"><i id="bar"></i></div><div class="time" id="time">00:00 / 00:00</div></div>
+ <div class="pair"><img id="qr" alt="QR code telecomando"><div class="pairinfo"><b>Telecomando iPhone</b>Scansiona il QR con il telefono. Entrambi i dispositivi devono avere Internet durante il collegamento iniziale; i comandi viaggiano direttamente tra i dispositivi quando possibile.<div class="pairurl" id="pairurl">Preparazione QR…</div></div></div>
+</section></div>
+<div class="remote" id="remote" hidden><section class="panel"><h1>Telecomando Traipler</h1><p>Controllo remoto del teleprompter. Mantieni aperta questa pagina sul telefono.</p><div class="twocol"><button class="btn primary big" id="rplay">▶ Play / Pausa</button><button class="btn big" id="rstop">■ Stop</button><button class="btn big" id="rback">↶ Indietro 5s</button><button class="btn big" id="rforward">Avanti 5s ↷</button></div><div class="speedlabel"><span>Velocità di scorrimento</span><b id="rspeedv">150 WPM</b></div><input id="rspeed" type="range" min="60" max="300" step="5" value="150"><p id="rstatus" style="margin-top:16px">Connessione al tablet…</p></section></div>
+<div class="toast" id="toast"></div>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+(()=>{
+const $=id=>document.getElementById(id),remoteMode=new URLSearchParams(location.search).has('remote');
+if(remoteMode){$('master').hidden=true;$('remote').hidden=false;$('fullscreen').style.display='none'}
+let peer=null,conn=null,peerId='',role=remoteMode?'remote':'master',running=false,offset=0,last=0,raf=0,countdown=null;
+function toast(s){let t=$('toast');t.textContent=s;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800)}
+function send(obj){if(conn&&conn.open)conn.send(obj)}
+function setupPeer(){
+ if(!window.Peer){if(remoteMode)$('rstatus').textContent='Impossibile caricare il servizio di collegamento. Verifica Internet.';else $('connection').textContent='Libreria connessione non disponibile';return}
+ if(role==='master'){
+  peer=new Peer('tp-'+Math.random().toString(36).slice(2,12),{debug:0});
+  peer.on('open',id=>{peerId=id;$('connection').textContent='● QR pronto · in attesa';let url=location.href.split('?')[0]+'?remote='+encodeURIComponent(id);$('pairurl').textContent=url;$('qr').src='https://api.qrserver.com/v1/create-qr-code/?size=220x220&data='+encodeURIComponent(url)});
+  peer.on('connection',c=>{if(conn){c.close();return}conn=c;wireMaster();$('connection').textContent='● iPhone collegato';});
+  peer.on('error',e=>{$('connection').textContent='Connessione: '+e.type});
+ }else{
+  const id=new URLSearchParams(location.search).get('remote');if(!id){$('rstatus').textContent='Codice sessione mancante';return}
+  peer=new Peer(undefined,{debug:0});peer.on('open',()=>{conn=peer.connect(id,{reliable:true});conn.on('open',()=>{$('rstatus').textContent='● Collegato al tablet';sendStateRequest()});conn.on('data',m=>remoteReceive(m));conn.on('close',()=>{$('rstatus').textContent='Connessione interrotta'});});
+  peer.on('error',e=>{$('rstatus').textContent='Connessione non riuscita: '+e.type});
+ }
+}
+function wireMaster(){conn.on('data',m=>{if(m.type==='cmd')command(m.action,m.value)});conn.on('close',()=>{conn=null;$('connection').textContent='● QR pronto · in attesa'});broadcast()}
+function sendStateRequest(){send({type:'request'})}
+function broadcast(){send({type:'state',running,offset,speed:role==='master'?+$('speed').value:150})}
+function remoteReceive(m){if(m.type==='state'){$('rplay').textContent=m.running?'Ⅱ Pausa':'▶ Play';$('rspeed').value=m.speed;$('rspeedv').textContent=m.speed+' WPM';$('rstatus').textContent=m.running?'● In riproduzione':'● Collegato · in pausa'}}
+function command(a,v){if(a==='toggle')play();if(a==='stop')stop();if(a==='seek')seek(v);if(a==='speed'){$('speed').value=v;layout()}}
+if(role==='remote'){
+ setupPeer();$('rplay').onclick=()=>send({type:'cmd',action:'toggle'});$('rstop').onclick=()=>send({type:'cmd',action:'stop'});$('rback').onclick=()=>send({type:'cmd',action:'seek',value:-5});$('rforward').onclick=()=>send({type:'cmd',action:'seek',value:5});$('rspeed').oninput=()=>{$('rspeedv').textContent=$('rspeed').value+' WPM';send({type:'cmd',action:'speed',value:+$('rspeed').value})};return
+}
+const script=$('script'),scroller=$('scroller'),stage=$('stage'),reading=$('reading');
+function words(){return script.value.trim()?script.value.trim().split(/\s+/).length:0}
+function fmt(s){s=Math.max(0,Math.floor(s||0));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+function maxOffset(){return Math.max(0,scroller.scrollHeight-stage.clientHeight*.68)}
+function draw(){scroller.style.transform=`translateY(${-offset}px)`;let max=maxOffset(),duration=Math.max(1,words()/(+$('speed').value)*60);$('bar').style.width=(max?Math.min(100,offset/max*100):0)+'%';$('time').textContent=fmt(offset/Math.max(1,max)*duration)+' / '+fmt(duration)}
+function layout(){scroller.textContent=script.value.trim();$('empty').style.display=script.value.trim()?'none':'grid';scroller.style.fontSize=$('font').value+'px';scroller.style.lineHeight=$('line').value;scroller.style.textAlign=$('align').value;scroller.style.left=$('margin').value+'%';scroller.style.right=$('margin').value+'%';let m=$('mirror').value;reading.style.transform=m==='x'?'scaleX(-1)':m==='y'?'scaleY(-1)':m==='both'?'scale(-1,-1)':'';$('speedv').textContent=$('speed').value+' WPM';$('fontv').textContent=$('font').value+' px';$('marginv').textContent=$('margin').value+'%';$('stats').textContent=words()+' parole · '+Math.ceil(words()/(+$('speed').value))+' min stimati';requestAnimationFrame(()=>{draw();broadcast()})}
+function pause(){running=false;cancelAnimationFrame(raf);$('play').textContent='▶';broadcast()}
+function tick(ts){if(!running)return;if(!last)last=ts;let dt=Math.min(80,ts-last);last=ts;offset+=(+$('speed').value)*(+$('font').value)*1.5/60*dt/1000;if(offset>=maxOffset()){offset=maxOffset();pause()}draw();if(running)raf=requestAnimationFrame(tick)}
+function start(){if(!script.value.trim())return toast('Inserisci prima un copione');running=true;last=0;$('play').textContent='Ⅱ';raf=requestAnimationFrame(tick);broadcast()}
+function play(){if(running){pause();return}if(countdown){clearInterval(countdown);countdown=null}if(offset>=maxOffset())offset=0;let n=offset===0?+$('count').value:0;if(n){$('play').textContent=n;countdown=setInterval(()=>{n--;$('play').textContent=n||'▶';if(n<=0){clearInterval(countdown);countdown=null;start()}},1000)}else start()}
+function stop(){pause();if(countdown){clearInterval(countdown);countdown=null}$('play').textContent='▶';offset=0;draw();broadcast()}
+function seek(s){pause();offset=Math.max(0,Math.min(maxOffset(),offset+s*(+$('speed').value)*(+$('font').value)*1.5/60));draw();broadcast()}
+$('play').onclick=play;$('stop').onclick=stop;$('back').onclick=()=>seek(-5);$('forward').onclick=()=>seek(5);$('top').onclick=stop;
+script.oninput=()=>{pause();offset=0;layout()};['speed','font','line','mirror','align','margin'].forEach(id=>$(id).oninput=layout);
+$('import').onclick=()=>$('file').click();$('file').onchange=async e=>{let f=e.target.files[0];if(f){script.value=await f.text();layout();toast('Copione importato')}};
+$('save').onclick=()=>{localStorage.setItem('traipler-script',script.value);toast('Copione salvato su iPad')};
+try{script.value=localStorage.getItem('traipler-script')||''}catch{}
+$('fullscreen').onclick=()=>{if(!document.fullscreenElement)document.documentElement.requestFullscreen?.();else document.exitFullscreen?.()};
+document.addEventListener('fullscreenchange',()=>{document.body.classList.toggle('fullscreen',!!document.fullscreenElement);$('fullscreen').textContent=document.fullscreenElement?'⤢ Esci':'⛶ Schermo intero';setTimeout(draw,100)});
+document.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName))return;if(e.code==='Space'){e.preventDefault();play()}else if(e.key==='ArrowLeft')seek(-5);else if(e.key==='ArrowRight')seek(5);else if(e.key==='Home')stop();else if(e.key.toLowerCase()==='f')$('fullscreen').click()});
+window.addEventListener('resize',draw);
+if('serviceWorker' in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+layout();setupPeer();
+})();
+</script>
+</body></html>

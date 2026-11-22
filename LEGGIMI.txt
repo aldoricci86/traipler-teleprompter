@@ -1,0 +1,31 @@
+TRAIPLER TELEPROMPTER — PWA per iPad + telecomando iPhone
+
+Questa è una web app installabile (PWA). Il teleprompter funziona offline dopo la prima apertura e conserva il copione sul dispositivo. Il telecomando si collega all'iPad tramite PeerJS/WebRTC: serve Internet per il servizio iniziale di segnalazione; i comandi passano poi direttamente tra i dispositivi quando la rete lo consente. Non serve un computer acceso nella stanza.
+
+IMPORTANTE: per installarla come app su iPad serve pubblicare questi file su un indirizzo HTTPS. Un file HTML aperto da File/Download non può diventare una PWA installabile e non può fornire un collegamento remoto affidabile.
+
+PUBBLICAZIONE SEMPLICE CON GITHUB PAGES
+1. Accedi o crea un account GitHub.
+2. Crea un repository pubblico chiamato traipler-teleprompter.
+3. Carica nella root TUTTI i file di questa cartella.
+4. Nel repository vai su Settings > Pages.
+5. In "Build and deployment" scegli "Deploy from a branch", branch "main", cartella "/ (root)", poi Save.
+6. Attendi la pubblicazione. L'indirizzo sarà simile a https://TUONOME.github.io/traipler-teleprompter/
+
+INSTALLAZIONE SU IPAD
+1. Apri l'indirizzo HTTPS in Safari su iPad.
+2. Tocca Condividi (quadrato con freccia verso l'alto).
+3. Scegli "Aggiungi alla schermata Home".
+4. Conferma. Apri Traipler Teleprompter dalla nuova icona.
+5. Incolla/importa il testo, imposta velocità e specchiatura, poi premi Schermo intero.
+
+COLLEGAMENTO IPHONE
+1. Apri la pagina principale sull'iPad. Nella sezione in basso appare un QR.
+2. Scansiona il QR con la fotocamera dell'iPhone.
+3. Si apre il telecomando. Premi Play/Pausa, Stop, avanti/indietro o modifica la velocità.
+
+REQUISITI E LIMITI
+- iPad e iPhone devono avere una connessione Internet durante l'abbinamento iniziale. La rete Wi-Fi comune favorisce il collegamento diretto WebRTC, ma alcune reti aziendali/guest o firewall possono impedirlo.
+- Il testo del copione resta nel browser dell'iPad; non viene inviato al telecomando.
+- Il servizio PeerJS è usato per trovare i due dispositivi. Il trasporto dei comandi avviene tramite WebRTC.
+- Se vuoi una soluzione senza dipendenza da servizi esterni e garantita solo in LAN, serve un piccolo servizio locale sempre acceso (ad esempio un Raspberry Pi o NAS). iPadOS non consente a una normale PWA di fare da server LAN in background in modo affidabile.
