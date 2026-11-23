@@ -153,10 +153,10 @@ select{width:100%;background:#0b100c;border:1px solid var(--line);border-radius:
  <div class="ui" id="ubot">
   <input id="seek" type="range" min="0" max="1000" value="0" aria-label="Posizione">
   <div class="row">
-   <button class="btn" id="toStart">Inizio</button>
-   <button class="btn" id="rew">−10 s</button>
+   <button class="btn" id="toStart">⇈ Inizio</button>
+   <button class="btn" id="rew5">−5 s</button><button class="btn" id="rew">−10 s</button>
    <button class="btn primary" id="play" style="min-width:84px;font-size:22px">▶</button>
-   <button class="btn" id="fwd">+10 s</button>
+   <button class="btn" id="fwd">+10 s</button><button class="btn" id="fwd5">+5 s</button><button class="btn" id="toEnd">Fine ⇊</button>
    <span class="spacer"></span>
    <button class="btn" id="sm">−</button><span class="badge" id="wpmBadge">150 WPM</span><button class="btn" id="sp">+</button>
   </div>
@@ -164,18 +164,18 @@ select{width:100%;background:#0b100c;border:1px solid var(--line);border-radius:
 </div>
 
 <div id="remote" hidden>
- <h1>Telecomando Traipler <small style="font-size:12px;color:var(--muted)">v14 · PC completo</small></h1><div class="muted" id="rstatus">Connessione all'iPad…</div>
+ <h1>Telecomando Traipler <small style="font-size:12px;color:var(--muted)">v15 · PC completo</small></h1><div class="muted" id="rstatus">Connessione all'iPad…</div>
  <div class="rgrid">
  <div class="rcol">
   <button class="btn primary big" id="rshow" style="margin-top:14px">Vedi il testo che scorre</button>
   <div class="twocol" style="margin-top:10px"><button class="btn big" id="rplay">▶ Play / Pausa</button><button class="btn big" id="ropen">Apri teleprompter</button></div>
   <button class="btn big" id="rclose" style="width:100%;margin-bottom:6px">Chiudi il teleprompter sull'iPad</button>
   <div class="sl"><span>Posizione nel testo</span><b id="rposv">0%</b></div><input id="rpos" type="range" min="0" max="1000" value="0">
-  <div class="twocol"><button class="btn big" id="rrew">−10 s</button><button class="btn big" id="rfwd">+10 s</button><button class="btn big" id="rstart">Dall'inizio</button><button class="btn big" id="rmirror">⇋ Specchia</button></div>
+  <div class="twocol"><button class="btn big" id="rrew5">−5 s</button><button class="btn big" id="rfwd5">+5 s</button><button class="btn big" id="rrew">−10 s</button><button class="btn big" id="rfwd">+10 s</button><button class="btn big" id="rstart">⇈ Tutto su</button><button class="btn big" id="rend">⇊ Tutto giù</button><button class="btn big" id="rmirror" style="grid-column:1/-1">⇋ Specchia</button></div>
   <div class="sl"><span>Velocità</span><b id="rwpmv">110 WPM</b></div>
   <div class="twocol"><button class="btn big" id="rslow">− più lento</button><button class="btn big" id="rfast">+ più veloce</button></div>
   <div class="twocol"><button class="btn big" id="rfm">A− testo</button><button class="btn big" id="rfp">A+ testo</button></div>
-  <div class="muted" style="margin-top:12px">Da tastiera: Spazio play/pausa, frecce ±5 s, + e − velocità, Home dall'inizio.</div>
+  <div class="muted" style="margin-top:12px">Da tastiera: Spazio play/pausa, frecce ±5 s, + e − velocità, Home tutto su, Fine tutto giù.</div>
  </div>
  <div class="rcol">
   <section class="card" style="margin-top:14px"><h2>COPIONI SULL'iPAD <button class="btn" id="rnew">+ Nuovo</button></h2>
@@ -207,7 +207,7 @@ select{width:100%;background:#0b100c;border:1px solid var(--line);border-radius:
  <div id="rempty">Aspetto il testo dall'iPad…<br>Apri il copione sull'iPad.</div>
  <div id="rguide"><i></i></div>
  <div class="ui" id="rtop"><button class="btn" id="rbackc">← Comandi</button><span class="badge" id="rtime">00:00</span><button class="btn" id="rmir2">⇋</button></div>
- <div class="ui" id="rbot"><div class="row"><button class="btn" id="rvrew">−10 s</button><button class="btn primary" id="rvplay" style="min-width:84px;font-size:22px">▶</button><button class="btn" id="rvfwd">+10 s</button><button class="btn" id="rvslow">−</button><span class="badge" id="rvwpm">110 WPM</span><button class="btn" id="rvfast">+</button></div></div>
+ <div class="ui" id="rbot"><div class="row"><button class="btn" id="rvtop">⇈</button><button class="btn" id="rvrew5">−5</button><button class="btn" id="rvrew">−10</button><button class="btn primary" id="rvplay" style="min-width:84px;font-size:22px">▶</button><button class="btn" id="rvfwd">+10</button><button class="btn" id="rvfwd5">+5</button><button class="btn" id="rvend">⇊</button><button class="btn" id="rvslow">−</button><span class="badge" id="rvwpm">110 WPM</span><button class="btn" id="rvfast">+</button></div></div>
 </div>
 <div class="toast" id="toast"></div>
 <script src="https://unpkg.com/mqtt@5.3.4/dist/mqtt.min.js"></script>
@@ -326,7 +326,7 @@ if(remoteMode){
  $('rshow').onclick=()=>{rshow=true;$('rview').hidden=false;rlast=0;rLayout();hello();requestAnimationFrame(rLoop)};
  $('rbackc').onclick=()=>{rshow=false;$('rview').hidden=true};
  $('rmir2').onclick=()=>{vMirror=!vMirror;rLayout()};
- $('rvplay').onclick=c('toggle');$('rvrew').onclick=c('seek',-10);$('rvfwd').onclick=c('seek',10);$('rvslow').onclick=c('wpmd',-5);$('rvfast').onclick=c('wpmd',5);
+ $('rvtop').onclick=c('start');$('rvend').onclick=c('end');$('rvrew5').onclick=c('seek',-5);$('rvfwd5').onclick=c('seek',5);$('rvplay').onclick=c('toggle');$('rvrew').onclick=c('seek',-10);$('rvfwd').onclick=c('seek',10);$('rvslow').onclick=c('wpmd',-5);$('rvfast').onclick=c('wpmd',5);
  window.addEventListener('resize',()=>{if(rshow)rLayout()});
  document.addEventListener('keydown',e=>{if(/^(TEXTAREA|INPUT)$/.test((e.target.tagName||''))&&e.target.type!=='range')return;const k=e.code;
   if(k==='Space'){e.preventDefault();send({type:'cmd',action:'toggle'})}
@@ -334,7 +334,8 @@ if(remoteMode){
   else if(k==='ArrowLeft'||k==='ArrowUp'){e.preventDefault();send({type:'cmd',action:'seek',value:-5})}
   else if(k==='Equal'||k==='NumpadAdd'||k==='PageUp'){send({type:'cmd',action:'wpmd',value:5})}
   else if(k==='Minus'||k==='NumpadSubtract'||k==='PageDown'){send({type:'cmd',action:'wpmd',value:-5})}
-  else if(k==='Home'){send({type:'cmd',action:'start'})}});
+  else if(k==='Home'){send({type:'cmd',action:'start'})}
+  else if(k==='End'){send({type:'cmd',action:'end'})}});
  const rv=$('rview');
  rv.addEventListener('pointerdown',e=>{if(e.target.closest('.ui'))return;rv.setPointerCapture(e.pointerId);pdrag={y:e.clientY,p:rpos,moved:false,t:0}});
  rv.addEventListener('pointermove',e=>{if(!pdrag)return;const dy=e.clientY-pdrag.y;if(Math.abs(dy)>8)pdrag.moved=true;if(pdrag.moved){rpos=Math.max(0,Math.min(1,pdrag.p-dy/rH()));rDraw();const n=Date.now();if(n-pdrag.t>70){pdrag.t=n;send({type:'cmd',action:'pos',value:rpos})}}});
@@ -342,7 +343,7 @@ if(remoteMode){
  const rend=()=>{if(!pdrag)return;const d=pdrag;pdrag=null;if(d.moved)send({type:'cmd',action:'pos',value:rpos});else send({type:'cmd',action:'toggle'})};
  rv.addEventListener('pointerup',rend);rv.addEventListener('pointercancel',rend);
 
- $('rclose').onclick=c('close');$('rnew').onclick=c('newscript');
+ $('rclose').onclick=c('close');$('rrew5').onclick=c('seek',-5);$('rfwd5').onclick=c('seek',5);$('rend').onclick=c('end');$('rnew').onclick=c('newscript');
  window.remoteMeta=m=>{Rsv=m.sv;
   $('rlist').innerHTML='';m.items.forEach(it=>{const d=document.createElement('div');d.className='rrow'+(it.i===m.cur?' on':'');
    d.innerHTML='<span class="tt"></span><button class="btn danger">Elimina</button>';const t=d.querySelector('.tt');t.textContent=it.t;const sm=document.createElement('small');sm.textContent=it.w+' parole';t.appendChild(sm);
@@ -492,6 +493,7 @@ function togglePlay(){
  else startPlay();
 }
 function seekSec(s){offset+=pxs()*s;draw();if(S.voice==='1')syncPtr();broadcast()}
+function toEnd(){offset=maxOff();draw();if(S.voice==='1')syncPtr();broadcast()}
 function toStart(){clearCd();offset=0;draw();if(S.voice==='1')syncPtr();broadcast()}
 function showUI(stay){
  ['utop','ubot'].forEach(i=>$(i).classList.remove('off'));clearTimeout(hideT);
@@ -534,7 +536,7 @@ pview.addEventListener('wheel',e=>{e.preventDefault();offset+=e.deltaY;draw();sh
 $('seek').addEventListener('input',()=>{seeking=true;offset=$('seek').value/1000*maxOff();draw();showUI(true)});
 $('seek').addEventListener('change',()=>{seeking=false;if(S.voice==='1')syncPtr();broadcast();showUI()});
 $('play').onclick=e=>{e.stopPropagation();togglePlay()};
-$('toStart').onclick=toStart;$('rew').onclick=()=>seekSec(-10);$('fwd').onclick=()=>seekSec(10);
+$('toStart').onclick=toStart;$('toEnd').onclick=toEnd;$('rew5').onclick=()=>seekSec(-5);$('fwd5').onclick=()=>seekSec(5);$('rew').onclick=()=>seekSec(-10);$('fwd').onclick=()=>seekSec(10);
 $('back').onclick=closePrompt;
 const setWpm=v=>{S.wpm=Math.max(20,Math.min(250,v));syncSettings();stats();saveS();draw();broadcast()};
 $('sm').onclick=()=>setWpm(S.wpm-5);$('sp').onclick=()=>setWpm(S.wpm+5);
@@ -554,6 +556,7 @@ function command(m){
  else if(a==='toggle'){if(!open)openPrompt();setTimeout(togglePlay,open?0:300)}
  else if(a==='seek'){seekSec(v)}
  else if(a==='start'){toStart()}
+ else if(a==='end'){toEnd()}
  else if(a==='mirror'){toggleMirror()}
  else if(a==='wpmd'){setWpm(S.wpm+v)}
  else if(a==='fontd'){setFont(S.font+v)}
