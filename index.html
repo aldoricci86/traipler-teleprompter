@@ -130,7 +130,7 @@ select{width:100%;background:#0b100c;border:1px solid var(--line);border-radius:
      <div class="field" id="vlangbox" hidden><label>Lingua che parli</label><select id="vlang"><option value="it-IT">Italiano</option><option value="en-US">English</option><option value="es-ES">Español</option><option value="fr-FR">Français</option><option value="de-DE">Deutsch</option></select></div>
      <div class="field"><label>Colore testo</label><select id="color"><option value="#ffffff">Bianco</option><option value="#ffe14d">Giallo</option><option value="#8ce0a0">Verde</option></select></div>
     </div>
-    <div class="pair"><img id="qr" alt="QR telecomando"><div class="pairinfo"><b>Telecomando iPhone</b>Inquadra il QR con l'iPhone. Serve Internet su entrambi solo per collegarli.<button class="btn" id="copyurl" style="margin-top:8px;min-height:38px;padding:8px 12px;font-size:13px">Copia il link del telecomando (per PC)</button><div id="pairurl" style="word-break:break-all;color:var(--green);margin-top:6px;font-size:11px"></div></div></div>
+    <div class="pair"><img id="qr" alt="QR telecomando"><div class="pairinfo"><b>Telecomando iPhone</b>Inquadra il QR col telefono. Per il PC tocca «Invia il link al PC» e scegli Mail, Messaggi, AirDrop o Note: poi aprilo sul PC. Serve Internet su entrambi solo per collegarli.<button class="btn" id="copyurl" style="margin-top:8px;min-height:38px;padding:8px 12px;font-size:13px">Invia il link al PC</button><div id="pairurl" style="word-break:break-all;color:var(--green);margin-top:6px;font-size:11px"></div></div></div>
    </section>
    <button class="btn primary bigplay" id="open">▶ Apri teleprompter</button>
   </div>
@@ -321,7 +321,9 @@ async function importFile(f){
  $('loading').hidden=false;
  try{const t=await Promise.race([readFile(f),new Promise((_,ko)=>setTimeout(()=>ko(new Error('Non riesco a leggere il file: salvalo come Word o incolla il testo')),30000))]);addText(t,f.name.replace(/\.[^.]+$/,''))}catch(e){toast(e.message||'Non riesco a leggere il file')}
  $('loading').hidden=true}
-$('copyurl').onclick=async()=>{const u=$('pairurl').textContent;if(!u)return toast('Link non ancora pronto');try{await navigator.clipboard.writeText(u);toast('Link copiato: incollalo nel browser del PC')}catch{prompt('Copia questo link:',u)}};
+$('copyurl').onclick=async()=>{const u=$('pairurl').textContent;if(!u)return toast('Link non ancora pronto');
+ if(navigator.share){try{await navigator.share({title:'Telecomando Traipler',text:'Apri questo link sul PC per comandare il teleprompter:',url:u});return}catch(e){if(e&&e.name==='AbortError')return}}
+ try{await navigator.clipboard.writeText(u);toast('Link copiato: incollalo nel browser del PC')}catch{location.href='mailto:?subject='+encodeURIComponent('Telecomando Traipler')+'&body='+encodeURIComponent(u)}};
 $('import').onclick=()=>$('file').click();
 $('file').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(f)importFile(f)};
 $('paste').onclick=async()=>{try{const t=await navigator.clipboard.readText();if(t&&t.trim())addText(t,'');else toast('Gli appunti sono vuoti: copia prima il testo')}catch{script.focus();toast('Tieni premuto nel riquadro e scegli Incolla')}};
