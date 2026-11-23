@@ -125,11 +125,10 @@ select{width:100%;background:#0b100c;border:1px solid var(--line);border-radius:
      <div class="field"><label>Interlinea <b id="linev"></b></label><input id="line" type="range" min="1.1" max="2.2" step=".05"></div>
      <div class="field"><label>Margini <b id="marginv"></b></label><input id="margin" type="range" min="2" max="25"></div>
      <div class="field"><label>Specchiatura</label><select id="mirror"><option value="1">Sì (per vetro teleprompter)</option><option value="0">No</option></select></div>
-     <div class="field"><label>Conto alla rovescia</label><select id="count"><option value="0">Nessuno</option><option value="3">3 secondi</option><option value="5">5 secondi</option><option value="10">10 secondi</option></select></div>
      <div class="field"><label>Allineamento</label><select id="align"><option value="center">Centrato</option><option value="left">Sinistra</option></select></div>
      <div class="field"><label>Colore testo</label><select id="color"><option value="#ffffff">Bianco</option><option value="#ffe14d">Giallo</option><option value="#8ce0a0">Verde</option></select></div>
     </div>
-    <div class="pair"><img id="qr" alt="QR telecomando"><div class="pairinfo"><b>Telecomando iPhone</b>Inquadra il QR con l'iPhone. Serve Internet su entrambi solo per collegarli.<div id="pairurl" style="word-break:break-all;color:var(--green);margin-top:4px;font-size:11px"></div></div></div>
+    <div class="pair"><img id="qr" alt="QR telecomando"><div class="pairinfo"><b>Telecomando iPhone</b>Inquadra il QR con l'iPhone. Serve Internet su entrambi solo per collegarli.<button class="btn" id="copyurl" style="margin-top:8px;min-height:38px;padding:8px 12px;font-size:13px">Copia il link del telecomando (per PC)</button><div id="pairurl" style="word-break:break-all;color:var(--green);margin-top:6px;font-size:11px"></div></div></div>
    </section>
    <button class="btn primary bigplay" id="open">▶ Apri teleprompter</button>
   </div>
@@ -185,7 +184,7 @@ select{width:100%;background:#0b100c;border:1px solid var(--line);border-radius:
 (()=>{
 const $=id=>document.getElementById(id),remoteMode=new URLSearchParams(location.search).has('remote');
 const GUIDE=.30; // il testo si legge sulla riga a 30% dall'alto
-const DEF={wpm:110,font:64,line:1.5,margin:7,mirror:'1',count:'3',align:'center',color:'#ffffff'};
+const DEF={wpm:110,font:64,line:1.5,margin:7,mirror:'1',count:'0',align:'center',color:'#ffffff'};
 let S={...DEF},scripts=[],cur=0;
 try{Object.assign(S,JSON.parse(localStorage.getItem('tp-settings')||'{}'))}catch{}
 try{scripts=JSON.parse(localStorage.getItem('tp-scripts')||'[]')}catch{}
@@ -265,6 +264,13 @@ if(remoteMode){
  $('rmir2').onclick=()=>{vMirror=!vMirror;rLayout()};
  $('rvplay').onclick=c('toggle');$('rvrew').onclick=c('seek',-10);$('rvfwd').onclick=c('seek',10);$('rvslow').onclick=c('wpmd',-5);$('rvfast').onclick=c('wpmd',5);
  window.addEventListener('resize',()=>{if(rshow)rLayout()});
+ document.addEventListener('keydown',e=>{if(/^(TEXTAREA|INPUT)$/.test((e.target.tagName||''))&&e.target.type!=='range')return;const k=e.code;
+  if(k==='Space'){e.preventDefault();send({type:'cmd',action:'toggle'})}
+  else if(k==='ArrowRight'||k==='ArrowDown'){e.preventDefault();send({type:'cmd',action:'seek',value:5})}
+  else if(k==='ArrowLeft'||k==='ArrowUp'){e.preventDefault();send({type:'cmd',action:'seek',value:-5})}
+  else if(k==='Equal'||k==='NumpadAdd'||k==='PageUp'){send({type:'cmd',action:'wpmd',value:5})}
+  else if(k==='Minus'||k==='NumpadSubtract'||k==='PageDown'){send({type:'cmd',action:'wpmd',value:-5})}
+  else if(k==='Home'){send({type:'cmd',action:'start'})}});
  const rv=$('rview');
  rv.addEventListener('pointerdown',e=>{if(e.target.closest('.ui'))return;rv.setPointerCapture(e.pointerId);pdrag={y:e.clientY,p:rpos,moved:false,t:0}});
  rv.addEventListener('pointermove',e=>{if(!pdrag)return;const dy=e.clientY-pdrag.y;if(Math.abs(dy)>8)pdrag.moved=true;if(pdrag.moved){rpos=Math.max(0,Math.min(1,pdrag.p-dy/rH()));rDraw();const n=Date.now();if(n-pdrag.t>70){pdrag.t=n;send({type:'cmd',action:'pos',value:rpos})}}});
@@ -313,6 +319,7 @@ async function importFile(f){
  $('loading').hidden=false;
  try{const t=await Promise.race([readFile(f),new Promise((_,ko)=>setTimeout(()=>ko(new Error('Non riesco a leggere il file: salvalo come Word o incolla il testo')),30000))]);addText(t,f.name.replace(/\.[^.]+$/,''))}catch(e){toast(e.message||'Non riesco a leggere il file')}
  $('loading').hidden=true}
+$('copyurl').onclick=async()=>{const u=$('pairurl').textContent;if(!u)return toast('Link non ancora pronto');try{await navigator.clipboard.writeText(u);toast('Link copiato: incollalo nel browser del PC')}catch{prompt('Copia questo link:',u)}};
 $('import').onclick=()=>$('file').click();
 $('file').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(f)importFile(f)};
 $('paste').onclick=async()=>{try{const t=await navigator.clipboard.readText();if(t&&t.trim())addText(t,'');else toast('Gli appunti sono vuoti: copia prima il testo')}catch{script.focus();toast('Tieni premuto nel riquadro e scegli Incolla')}};
@@ -321,11 +328,11 @@ $('clear').onclick=()=>{if(script.value.trim()&&!confirm('Svuotare il copione?')
 ['dragleave','drop'].forEach(ev=>script.addEventListener(ev,e=>{e.preventDefault();script.classList.remove('drop')}));
 script.addEventListener('drop',e=>{const f=e.dataTransfer&&e.dataTransfer.files[0];if(f)importFile(f);else{const t=e.dataTransfer&&e.dataTransfer.getData('text');if(t)addText(t,'')}});
 function syncSettings(){
- $('wpm').value=S.wpm;$('font').value=S.font;$('line').value=S.line;$('margin').value=S.margin;$('mirror').value=S.mirror;$('count').value=S.count;$('align').value=S.align;$('color').value=S.color;
+ $('wpm').value=S.wpm;$('font').value=S.font;$('line').value=S.line;$('margin').value=S.margin;$('mirror').value=S.mirror;$('align').value=S.align;$('color').value=S.color;
  $('wpmv').textContent=S.wpm+' WPM';$('fontv').textContent=S.font+' px';$('linev').textContent=S.line;$('marginv').textContent=S.margin+'%';$('wpmBadge').textContent=S.wpm+' WPM';
 }
 ['wpm','font','line','margin'].forEach(k=>$(k).oninput=()=>{S[k]=+$(k).value;syncSettings();applyStyle();stats();saveS()});
-['mirror','count','align','color'].forEach(k=>$(k).onchange=()=>{S[k]=$(k).value;syncSettings();applyStyle();saveS()});
+['mirror','align','color'].forEach(k=>$(k).onchange=()=>{S[k]=$(k).value;syncSettings();applyStyle();saveS()});
 
 /* ---------- teleprompter ---------- */
 let open=false,running=false,offset=0,raf=0,lastT=0,cdTimer=null,hideT=null,wake=null,vel=0;
@@ -364,7 +371,7 @@ function togglePlay(){
  if(cdTimer){clearCd();$('play').textContent='▶';return}
  if(running){pausePlay();return}
  if(offset>=maxOff()-1)offset=0;
- let n=offset<5?+S.count:0;
+ let n=0;
  if(n){$('cd').hidden=false;$('cd').textContent=n;$('play').textContent='Ⅱ';cdTimer=setInterval(()=>{n--;if(n<=0){clearCd();startPlay()}else $('cd').textContent=n},1000)}
  else startPlay();
 }
