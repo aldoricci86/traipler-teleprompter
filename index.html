@@ -232,11 +232,12 @@ html.solo #rbackc{display:none!important}
 <div class="toast" id="toast"></div>
 <script src="https://unpkg.com/mqtt@5.3.4/dist/mqtt.min.js"></script>
 <script>
-const BUILD='v21';
+const BUILD='v22';
+const SID=Math.random().toString(36).slice(2,8);
 const SOLO=/[?&]solo=1/.test(location.search);if(SOLO)document.documentElement.classList.add('solo');
 /* aggiornamento automatico: se online c'e' una versione piu' nuova, ricarica da solo (la chiave del telecomando nell'indirizzo resta) */
 (async()=>{try{const t=await (await fetch('./index.html?c='+Date.now(),{cache:'no-store'})).text();const m=t.match(/const BUILD='(v\d+)'/);
- if(m&&m[1]!==BUILD){const k='tp_reload_'+m[1];if(!sessionStorage.getItem(k)){sessionStorage.setItem(k,'1');{const q=new URLSearchParams(location.search);q.set('u',m[1]);location.replace(location.pathname+'?'+q.toString()+location.hash)}}}}catch(e){}})();
+ if(m&&m[1]!==BUILD&&new URLSearchParams(location.search).get('u')!==m[1]){let ok=true;try{const k='tp_rl_'+m[1],t=+localStorage.getItem(k)||0;if(Date.now()-t<600000)ok=false;else localStorage.setItem(k,String(Date.now()))}catch(e){ok=false}if(ok){{const q=new URLSearchParams(location.search);q.set('u',m[1]);location.replace(location.pathname+'?'+q.toString()+location.hash)}}}}catch(e){}})();
 
 (()=>{
 const $=id=>document.getElementById(id),remoteMode=new URLSearchParams(location.search).has('remote');
@@ -258,14 +259,14 @@ const fromB=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));
 const urlB=u=>toB(u).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 const urlFrom=t=>fromB(t.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-t.length%4)%4));
 let Rtv='',sending=false;
-let Rsv='';
+let Rsv='',seenSid={},lockSid='',lockAt=0,lockOpen=false;
 const hello=()=>send({type:'cmd',action:'hello',tv:Rtv,sv:Rsv});
 let mqs=[],room='',cryptoKey=null,keyRaw='',lastRx=0,tq=0;const seen=new Set();
 const myTopic=()=>'traipler-tp/'+room+(remoteMode?'/m':'/r');   // cosa ascolto
 const toTopic=()=>'traipler-tp/'+room+(remoteMode?'/r':'/m');   // dove scrivo
 async function enc(o){const iv=crypto.getRandomValues(new Uint8Array(12));const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},cryptoKey,new TextEncoder().encode(JSON.stringify(o))));const out=new Uint8Array(12+ct.length);out.set(iv);out.set(ct,12);return toB(out)}
 async function dec(t){const u=fromB(t);const p=await crypto.subtle.decrypt({name:'AES-GCM',iv:u.subarray(0,12)},cryptoKey,u.subarray(12));return JSON.parse(new TextDecoder().decode(p))}
-async function send(m){if(!cryptoKey||!isUp())return;m._i=Math.random().toString(36).slice(2,10);let p;try{p=await enc(m)}catch{return}mqs.forEach(c=>{if(c.connected)try{c.publish(toTopic(),p)}catch{}})}
+async function send(m){if(!cryptoKey||!isUp())return;m._i=Math.random().toString(36).slice(2,10);if(!remoteMode)m.sid=SID;let p;try{p=await enc(m)}catch{return}mqs.forEach(c=>{if(c.connected)try{c.publish(toTopic(),p)}catch{}})}
 const isUp=()=>mqs.some(c=>c.connected);const nUp=()=>mqs.filter(c=>c.connected).length;
 function setStatus(t){if(remoteMode)$('rstatus').textContent=t;else $('connection').textContent=t}
 async function setupLink(){
@@ -296,7 +297,13 @@ function connectLink(){
   c.on('message',async(tp,buf)=>{let m;try{m=await dec(buf.toString())}catch{return}
    if(m._i){if(seen.has(m._i))return;seen.add(m._i);if(seen.size>300)seen.delete(seen.values().next().value)}
    lastRx=Date.now();
-   if(remoteMode){if(m.type==='state')remoteState(m);else if(m.type==='text')remoteText(m);else if(m.type==='meta')remoteMeta(m)}
+   if(remoteMode){const now=Date.now();
+    if(m.sid){ // piu' pagine dell'iPad nella stessa stanza: il PC segue solo quella con il teleprompter aperto (o la prima), mai le due insieme
+     seenSid[m.sid]=now;
+     if(!lockSid||(now-(lockAt||0)>8000&&lockSid!==m.sid)||(m.type==='state'&&m.open&&lockSid!==m.sid&&!lockOpen)){lockSid=m.sid;lockOpen=!!m.open}
+     if(m.sid!==lockSid)return;lockAt=now;if(m.type==='state')lockOpen=!!m.open;
+     const n=Object.keys(seenSid).filter(k=>now-seenSid[k]<15000).length;const e=document.getElementById('rbuild');if(e&&n>1)e.dataset.multi=String(n);else if(e)delete e.dataset.multi}
+    if(m.type==='state')remoteState(m);else if(m.type==='text')remoteText(m);else if(m.type==='meta')remoteMeta(m)}
    else if(m&&m.type==='cmd'){setStatus('● Telefono collegato');if(m.action==='hello'){if(m.tv!==curTv())sendText();if(m.sv!==metaObj().sv)sendMeta();broadcast()}else command(m)}});
   c.on('error',()=>{});
  });
@@ -343,17 +350,19 @@ if(remoteMode){
  let wLock=0,wT=0,wTm=0;const R={text:'',font:64,line:1.5,align:'center',color:'#ffffff',margin:7,mirror:'1'};let rpos=0,rvoice=false,rrun=false,rwpm=110,rshow=false,vMirror=false,pdrag=null,rwords=1,rlast=0;
  const rH=()=>Math.max(1,$('rtext').offsetHeight);
  const rDraw=()=>{$('rscroll').style.transform='translateY('+(-rpos*rH())+'px)'};
- let rk=1,rvw=744,rvh=1133;
+ let rk=1,rvw=744,rvh=1133,lastOpenAt=0,candK='',candN=0;
  function rLayout(){const rvE=$('rview'),desk=matchMedia('(min-width:1000px)').matches&&!SOLO,availW=desk?Math.min(Math.round(innerWidth*.42),680):innerWidth,availH=desk?innerHeight-32:innerHeight;
   rk=Math.min(availW/rvw,availH/rvh);const pw=Math.round(rvw*rk),ph=Math.round(rvh*rk);
   if(desk){rvE.style.width=pw+'px';rvE.style.height=ph+'px';$('remote').style.setProperty('padding-right',(pw+56)+'px','important');const dk=$('rdock');dk.style.top=(16+ph+10)+'px';dk.style.width=pw+'px'}else{rvE.style.width='';rvE.style.height='';$('remote').style.removeProperty('padding-right')}
-  const m=$('rmir');m.style.cssText='position:absolute;left:0;top:0;overflow:hidden;width:'+rvw+'px;height:'+rvh+'px;transform-origin:0 0;transform:'+(vMirror?'translateX('+(desk?pw:innerWidth-(innerWidth-pw)/2)+'px) scale('+(-rk)+','+rk+')':'translateX('+(desk?0:(innerWidth-pw)/2)+'px) scale('+rk+')');
+  const m=$('rmir');m.style.position='absolute';m.style.left='0';m.style.top='0';m.style.overflow='hidden';m.style.width=rvw+'px';m.style.height=rvh+'px';m.style.transformOrigin='0 0';m.style.transform=(vMirror?'translateX('+(desk?pw:innerWidth-(innerWidth-pw)/2)+'px) scale('+(-rk)+','+rk+')':'translateX('+(desk?0:(innerWidth-pw)/2)+'px) scale('+rk+')');
   const oy=desk?0:Math.round((innerHeight-ph)/2);if(!desk)m.style.top=oy+'px';$('rguide').style.top=Math.round(oy+ph*.3)+'px';$('rdim').style.height=Math.round(oy+ph*.3)+'px';
   const t=$('rtext');t.style.fontSize=R.font+'px';t.style.lineHeight=R.line;t.style.textAlign=R.align;t.style.color=R.color;$('rscroll').style.padding=Math.round(rvh*.3)+'px '+R.margin+'% '+Math.round(rvh*.7)+'px';$('rempty').hidden=!!R.text;rDraw()}
  const parts={};window.remoteText=m=>{if(m.tv===Rtv)return;(parts[m.tv]=parts[m.tv]||{n:m.n,p:{}}).p[m.i]=m.part;const q=parts[m.tv];if(Object.keys(q.p).length<q.n)return;
   R.text=Array.from({length:q.n},(_,k)=>q.p[k]).join('');Rtv=m.tv;for(const k in parts)delete parts[k];
   R.font=m.font||64;R.line=m.line||1.5;R.align=m.align||'center';R.color=m.color||'#ffffff';R.margin=m.margin||7;$('rtext').textContent=R.text;rwords=Math.max(1,R.text.trim()?R.text.trim().split(/\s+/).length:1);if(!$('rtxt').dataset.dirty)$('rtxt').value=R.text;rLayout()};
- window.remoteState=m=>{$('rempty').innerHTML=R.text?'':"Aspetto il testo dall'iPad…<br>Apri il copione sull'iPad.";if(!m.vw){$('rstatus').dataset.old='1'}else delete $('rstatus').dataset.old;$('rbuild').textContent=m.b?('iPad '+m.b+' · vista '+m.vw+'×'+m.vh):"iPad con app VECCHIA: chiudi e riapri l'app sull'iPad (anche due volte) per avere la stessa vista";if(m.vw&&m.vh&&(Math.abs(m.vw-rvw)>1||Math.abs(m.vh-rvh)>1)){rvw=m.vw;rvh=m.vh;if(rshow)rLayout()}rrun=!!m.running;rvoice=!!m.voice;rwpm=m.wpm;$('rplay').textContent=rrun?'Ⅱ Pausa':'▶ Play';$('rdplay').textContent=rrun?'Ⅱ':'▶';$('rdwpm').textContent=m.wpm+' WPM';$('rvplay').textContent=rrun?'Ⅱ':'▶';$('rwpmv').textContent=m.wpm+' WPM';$('rvwpm').textContent=m.wpm+' WPM';$('rtime').textContent=m.time;if(!dragging){$('rpos').value=Math.round(m.pos*1000);$('rposv').textContent=Math.round(m.pos*100)+'%'}if(!pdrag&&Date.now()>wLock){const d=m.pos-rpos,ad=Math.abs(d);/* in riproduzione il PC avanza da solo come l'iPad: corregge solo se si allontana davvero, senza scatti */if(!m.running||ad>.03)rpos=m.pos;else if(ad>.004)rpos+=d*.08;if(rshow)rDraw()}setStatus((m.open?(rrun?'● In riproduzione':'● In pausa'):'● Collegato · teleprompter chiuso')+' · '+m.time)};
+ window.remoteState=m=>{$('rempty').innerHTML=R.text?'':"Aspetto il testo dall'iPad…<br>Apri il copione sull'iPad.";if(!m.vw){$('rstatus').dataset.old='1'}else delete $('rstatus').dataset.old;$('rbuild').textContent=(document.getElementById('rbuild').dataset.multi?'ATTENZIONE: '+document.getElementById('rbuild').dataset.multi+' pagine dell\'iPad aperte nella stessa stanza: chiudi le altre. ':'')+(m.b?('iPad '+m.b+' · vista '+m.vw+'×'+m.vh):"iPad con app VECCHIA: chiudi e riapri l'app sull'iPad (anche due volte) per avere la stessa vista");if(m.vw&&m.vh){const now=Date.now();if(m.open)lastOpenAt=now;
+  if(m.open||now-lastOpenAt>10000){const cand=m.vw+'x'+m.vh;if(cand===candK)candN++;else{candK=cand;candN=1}
+   if(candN>=3&&(Math.abs(m.vw-rvw)>2||Math.abs(m.vh-rvh)>2)){rvw=m.vw;rvh=m.vh;if(rshow)rLayout()}}}rrun=!!m.running;rvoice=!!m.voice;rwpm=m.wpm;$('rplay').textContent=rrun?'Ⅱ Pausa':'▶ Play';$('rdplay').textContent=rrun?'Ⅱ':'▶';$('rdwpm').textContent=m.wpm+' WPM';$('rvplay').textContent=rrun?'Ⅱ':'▶';$('rwpmv').textContent=m.wpm+' WPM';$('rvwpm').textContent=m.wpm+' WPM';$('rtime').textContent=m.time;if(!dragging){$('rpos').value=Math.round(m.pos*1000);$('rposv').textContent=Math.round(m.pos*100)+'%'}if(!pdrag&&Date.now()>wLock){const d=m.pos-rpos,ad=Math.abs(d);/* in riproduzione il PC avanza da solo come l'iPad: corregge solo se si allontana davvero, senza scatti */if(!m.running||ad>.03)rpos=m.pos;else if(ad>.004)rpos+=d*.08;if(rshow)rDraw()}setStatus((m.open?(rrun?'● In riproduzione':'● In pausa'):'● Collegato · teleprompter chiuso')+' · '+m.time)};
  function rLoop(t){if(!rshow)return;if(!rlast)rlast=t;const dt=Math.min(.1,(t-rlast)/1000);rlast=t;if(rrun&&!rvoice&&!pdrag&&Date.now()>wLock){rpos=Math.min(1,rpos+dt*(rwpm/60)/rwords)}rDraw();requestAnimationFrame(rLoop)}
  const openView=()=>{rshow=true;$('rview').hidden=false;rlast=0;rLayout();hello();requestAnimationFrame(rLoop)};
  $('rshow').onclick=openView;if(SOLO||matchMedia('(min-width:1000px)').matches)setTimeout(openView,0);
