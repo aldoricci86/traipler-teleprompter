@@ -77,6 +77,19 @@ select{width:100%;background:#0b100c;border:1px solid var(--line);border-radius:
 .twocol{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
 .sl{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;margin:18px 0 6px}.sl b{color:#fff}
 #remote input[type=range]{width:100%;accent-color:var(--green);height:36px}
+#rview{position:fixed;inset:0;z-index:60;background:#000;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+#rmir{position:absolute;inset:0;overflow:hidden}
+#rscroll{position:absolute;left:0;right:0;top:0;will-change:transform;font-weight:700;letter-spacing:.005em}
+#rtext{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}
+#rguide{position:absolute;left:0;right:0;top:30%;height:0;pointer-events:none;z-index:2}
+#rguide:before,#rguide:after{content:"";position:absolute;top:-9px;border:9px solid transparent}
+#rguide:before{left:0;border-left-color:#ff4d4d;border-left-width:14px}
+#rguide:after{right:0;border-right-color:#ff4d4d;border-right-width:14px}
+#rguide i{position:absolute;left:20px;right:20px;top:-1px;height:2px;background:#ff4d4d55}
+#rtop{top:0;padding-top:max(12px,env(safe-area-inset-top))}
+#rbot{bottom:0;background:linear-gradient(#0000,#000e);padding-bottom:max(14px,env(safe-area-inset-bottom))}
+#rview .ui{flex-wrap:nowrap;gap:6px;justify-content:space-between}#rview .ui .row{flex-wrap:nowrap;gap:6px}#rview .btn,#rview .badge{white-space:nowrap}#rview .btn{min-width:0;padding:10px 12px;min-height:46px;font-size:14px}#rview .badge{min-width:0;font-size:13px}
+#rempty{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);text-align:center;padding:30px;z-index:1}
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#d4f7dc;color:#102516;padding:11px 15px;border-radius:12px;font-size:13px;font-weight:700;opacity:0;transition:.2s;pointer-events:none;z-index:99}.toast.show{opacity:1}
 </style>
 </head>
@@ -147,7 +160,8 @@ select{width:100%;background:#0b100c;border:1px solid var(--line);border-radius:
 
 <div id="remote" hidden>
  <h1>Telecomando Traipler</h1><div class="muted" id="rstatus">Connessione all'iPad…</div>
- <div class="twocol" style="margin-top:16px"><button class="btn primary big" id="rplay">▶ Play / Pausa</button><button class="btn big" id="ropen">Apri teleprompter</button></div>
+ <button class="btn primary big" id="rshow" style="margin-top:14px">Vedi il testo che scorre</button>
+ <div class="twocol" style="margin-top:10px"><button class="btn big" id="rplay">▶ Play / Pausa</button><button class="btn big" id="ropen">Apri teleprompter</button></div>
  <div class="sl"><span>Posizione nel testo</span><b id="rposv">0%</b></div><input id="rpos" type="range" min="0" max="1000" value="0">
  <div class="twocol"><button class="btn big" id="rrew">−10 s</button><button class="btn big" id="rfwd">+10 s</button><button class="btn big" id="rstart">Dall'inizio</button><button class="btn big" id="rmirror">⇋ Specchia</button></div>
  <div class="sl"><span>Velocità</span><b id="rwpmv">150 WPM</b></div>
@@ -157,8 +171,15 @@ select{width:100%;background:#0b100c;border:1px solid var(--line);border-radius:
  <textarea id="rtxt" placeholder="Incolla qui il copione e premi Invia" style="width:100%;min-height:130px;background:#0b100c;border:1px solid var(--line);border-radius:12px;padding:12px;font-size:16px"></textarea>
  <div class="twocol"><button class="btn big" id="rpaste">Incolla</button><button class="btn primary big" id="rsend">Invia all'iPad</button></div>
 </div>
+<div id="rview" hidden>
+ <div id="rmir"><div id="rscroll"><div id="rtext"></div></div></div>
+ <div id="rempty">Aspetto il testo dall'iPad…<br>Apri il copione sull'iPad.</div>
+ <div id="rguide"><i></i></div>
+ <div class="ui" id="rtop"><button class="btn" id="rbackc">← Comandi</button><span class="badge" id="rtime">00:00</span><button class="btn" id="rmir2">⇋</button></div>
+ <div class="ui" id="rbot"><div class="row"><button class="btn" id="rvrew">−10 s</button><button class="btn primary" id="rvplay" style="min-width:84px;font-size:22px">▶</button><button class="btn" id="rvfwd">+10 s</button><button class="btn" id="rvslow">−</button><span class="badge" id="rvwpm">110 WPM</span><button class="btn" id="rvfast">+</button></div></div>
+</div>
 <div class="toast" id="toast"></div>
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://unpkg.com/mqtt@5.3.4/dist/mqtt.min.js"></script>
 <script>
 (()=>{
 const $=id=>document.getElementById(id),remoteMode=new URLSearchParams(location.search).has('remote');
@@ -173,23 +194,51 @@ const saveS=()=>{try{localStorage.setItem('tp-settings',JSON.stringify(S));local
 function toast(s){const t=$('toast');t.textContent=s;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800)}
 const fmt=s=>{s=Math.max(0,Math.round(s));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
 
-/* ---------- collegamento iPad <-> iPhone ---------- */
-let peer=null,conn=null;
-function send(m){if(conn&&conn.open)try{conn.send(m)}catch{}}
-function setupPeer(){
- if(!window.Peer){if(remoteMode)$('rstatus').textContent='Servizio di collegamento non raggiungibile: serve Internet.';else $('connection').textContent='Senza Internet: telecomando non disponibile';return}
- if(!remoteMode){
-  peer=new Peer(undefined,{debug:0});
-  peer.on('open',id=>{$('connection').textContent='● QR pronto';const url=location.href.split('?')[0].split('#')[0]+'?remote='+encodeURIComponent(id);$('pairurl').textContent=url;$('qr').src='https://api.qrserver.com/v1/create-qr-code/?size=240x240&data='+encodeURIComponent(url)});
-  peer.on('connection',c=>{if(conn&&conn.open){c.close();return}conn=c;c.on('data',m=>{if(m&&m.type==='cmd')command(m)});c.on('open',()=>{$('connection').textContent='● iPhone collegato';broadcast()});c.on('close',()=>{conn=null;$('connection').textContent='● QR pronto'})});
-  peer.on('error',e=>{$('connection').textContent='Connessione: '+e.type});
- }else{
-  const id=new URLSearchParams(location.search).get('remote');if(!id){$('rstatus').textContent='Codice mancante';return}
-  peer=new Peer(undefined,{debug:0});
-  peer.on('open',()=>{conn=peer.connect(id,{reliable:true});conn.on('open',()=>{$('rstatus').textContent='● Collegato all\'iPad'});conn.on('data',m=>{if(m&&m.type==='state')remoteState(m)});conn.on('close',()=>{$('rstatus').textContent='Connessione interrotta: ricarica la pagina'})});
-  peer.on('error',e=>{$('rstatus').textContent='Connessione non riuscita: '+e.type});
- }
+/* ---------- collegamento iPad <-> telefono: relay MQTT cifrato, funziona su qualsiasi rete ---------- */
+const BROKERS=['wss://broker.emqx.io:8084/mqtt','wss://broker.hivemq.com:8884/mqtt','wss://test.mosquitto.org:8081'];
+const toB=u=>{let t='';for(let i=0;i<u.length;i+=8192)t+=String.fromCharCode.apply(null,u.subarray(i,i+8192));return btoa(t)};
+const fromB=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));
+const urlB=u=>toB(u).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const urlFrom=t=>fromB(t.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-t.length%4)%4));
+let mq=null,bi=0,room='',cryptoKey=null,keyRaw='',lastRx=0,tq=0;
+const myTopic=()=>'traipler-tp/'+room+(remoteMode?'/m':'/r');   // cosa ascolto
+const toTopic=()=>'traipler-tp/'+room+(remoteMode?'/r':'/m');   // dove scrivo
+async function enc(o){const iv=crypto.getRandomValues(new Uint8Array(12));const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},cryptoKey,new TextEncoder().encode(JSON.stringify(o))));const out=new Uint8Array(12+ct.length);out.set(iv);out.set(ct,12);return toB(out)}
+async function dec(t){const u=fromB(t);const p=await crypto.subtle.decrypt({name:'AES-GCM',iv:u.subarray(0,12)},cryptoKey,u.subarray(12));return JSON.parse(new TextDecoder().decode(p))}
+async function send(m){if(!(mq&&mq.connected&&cryptoKey))return;try{mq.publish(toTopic(),await enc(m))}catch{}}
+const isUp=()=>!!(mq&&mq.connected);
+function setStatus(t){if(remoteMode)$('rstatus').textContent=t;else $('connection').textContent=t}
+async function setupLink(){
+ if(!window.mqtt||!window.crypto||!crypto.subtle){setStatus('Collegamento non disponibile: serve Internet e una connessione sicura');return}
+ try{
+  if(remoteMode){
+   room=new URLSearchParams(location.search).get('remote')||'';keyRaw=location.hash.slice(1);
+   if(!room||!keyRaw){setStatus('Codice non valido: inquadra di nuovo il QR sull\'iPad');return}
+  }else{
+   try{room=localStorage.getItem('tp-room')||'';keyRaw=localStorage.getItem('tp-key')||''}catch{}
+   if(!room||!keyRaw){room=Array.from(crypto.getRandomValues(new Uint8Array(9)),b=>b.toString(16).padStart(2,'0')).join('');keyRaw=urlB(crypto.getRandomValues(new Uint8Array(16)));try{localStorage.setItem('tp-room',room);localStorage.setItem('tp-key',keyRaw)}catch{}}
+   const url=location.href.split('?')[0].split('#')[0]+'?remote='+room+'#'+keyRaw;
+   $('pairurl').textContent=url;$('qr').src='https://api.qrserver.com/v1/create-qr-code/?size=240x240&data='+encodeURIComponent(url);
+  }
+  cryptoKey=await crypto.subtle.importKey('raw',urlFrom(keyRaw),'AES-GCM',false,['encrypt','decrypt']);
+ }catch(e){setStatus('Codice non valido: inquadra di nuovo il QR');return}
+ connectLink();
+ setInterval(()=>{ if(remoteMode){ if(isUp())send({type:'cmd',action:'hello'}); const ok=Date.now()-lastRx<12000; if(isUp()&&!ok)setStatus('● Connesso, ma l\'iPad non risponde: apri il teleprompter sull\'iPad') }
+  else{ const ok=Date.now()-lastRx<12000; if(isUp())setStatus(ok?'● Telefono collegato':'● Pronto: inquadra il QR col telefono') } },3000);
 }
+function connectLink(){
+ setStatus('Collegamento in corso…');
+ const c=mqtt.connect(BROKERS[bi%BROKERS.length],{clientId:'tp'+Math.random().toString(16).slice(2,12),clean:true,connectTimeout:8000,reconnectPeriod:0,keepalive:25});
+ mq=c;let gone=false;
+ const retry=()=>{if(gone)return;gone=true;try{c.end(true)}catch{}bi++;setTimeout(connectLink,1500)};
+ c.on('connect',()=>{c.subscribe(myTopic(),{qos:0},()=>{setStatus(remoteMode?'● Cerco l\'iPad…':'● Pronto: inquadra il QR col telefono');if(remoteMode)send({type:'cmd',action:'hello'});else{queueText();broadcast()}})});
+ c.on('message',async(tp,buf)=>{let m;try{m=await dec(buf.toString())}catch{return}lastRx=Date.now();
+  if(remoteMode){if(m.type==='state')remoteState(m);else if(m.type==='text')remoteText(m)}
+  else if(m&&m.type==='cmd'){setStatus('● Telefono collegato');if(m.action==='hello'){sendText();broadcast()}else command(m)}});
+ c.on('error',retry);c.on('close',retry);c.on('offline',retry);
+}
+function sendText(){send({type:'text',text:script.value.trim().slice(0,200000),font:S.font,line:S.line,align:S.align,color:S.color,margin:S.margin,mirror:S.mirror})}
+function queueText(){clearTimeout(tq);tq=setTimeout(()=>{if(!remoteMode&&isUp())sendText()},400)}
 
 /* ---------- telecomando iPhone ---------- */
 if(remoteMode){
@@ -198,11 +247,28 @@ if(remoteMode){
  $('rplay').onclick=c('toggle');$('ropen').onclick=c('open');$('rrew').onclick=c('seek',-10);$('rfwd').onclick=c('seek',10);$('rstart').onclick=c('start');
  $('rmirror').onclick=c('mirror');$('rslow').onclick=c('wpmd',-5);$('rfast').onclick=c('wpmd',5);$('rfm').onclick=c('fontd',-4);$('rfp').onclick=c('fontd',4);
  let dragging=false;$('rpos').oninput=()=>{dragging=true;$('rposv').textContent=Math.round($('rpos').value/10)+'%';send({type:'cmd',action:'pos',value:$('rpos').value/1000})};$('rpos').onchange=()=>{dragging=false};
- window.remoteState=m=>{$('rplay').textContent=m.running?'Ⅱ Pausa':'▶ Play';$('rwpmv').textContent=m.wpm+' WPM';if(!dragging){$('rpos').value=Math.round(m.pos*1000);$('rposv').textContent=Math.round(m.pos*100)+'%'}$('rstatus').textContent=(m.open?(m.running?'● In riproduzione':'● In pausa'):'● Collegato · teleprompter chiuso')+' · '+m.time};
+ const R={text:'',font:64,line:1.5,align:'center',color:'#ffffff',margin:7,mirror:'1'};let rpos=0,rrun=false,rwpm=110,rshow=false,vMirror=false,pdrag=null,rwords=1,rlast=0;
+ const rH=()=>Math.max(1,$('rtext').offsetHeight);
+ const rDraw=()=>{$('rscroll').style.transform='translateY('+(-rpos*rH())+'px)'};
+ function rLayout(){const h=innerHeight,f=Math.max(22,Math.round(R.font*innerWidth/744*.95));const t=$('rtext');t.style.fontSize=f+'px';t.style.lineHeight=R.line;t.style.textAlign=R.align;t.style.color=R.color;$('rscroll').style.padding=Math.round(h*.3)+'px '+R.margin+'% '+Math.round(h*.7)+'px';$('rmir').style.transform=vMirror?'scaleX(-1)':'';$('rempty').hidden=!!R.text;rDraw()}
+ window.remoteText=m=>{R.text=m.text||'';R.font=m.font||64;R.line=m.line||1.5;R.align=m.align||'center';R.color=m.color||'#ffffff';R.margin=m.margin||7;$('rtext').textContent=R.text;rwords=Math.max(1,R.text.trim()?R.text.trim().split(/\s+/).length:1);rLayout()};
+ window.remoteState=m=>{rrun=!!m.running;rwpm=m.wpm;$('rplay').textContent=rrun?'Ⅱ Pausa':'▶ Play';$('rvplay').textContent=rrun?'Ⅱ':'▶';$('rwpmv').textContent=m.wpm+' WPM';$('rvwpm').textContent=m.wpm+' WPM';$('rtime').textContent=m.time;if(!dragging){$('rpos').value=Math.round(m.pos*1000);$('rposv').textContent=Math.round(m.pos*100)+'%'}if(!pdrag){const d=m.pos-rpos;rpos=Math.abs(d)>.01?m.pos:rpos+d*.35;if(rshow)rDraw()}setStatus((m.open?(rrun?'● In riproduzione':'● In pausa'):'● Collegato · teleprompter chiuso')+' · '+m.time)};
+ function rLoop(t){if(!rshow)return;if(!rlast)rlast=t;const dt=Math.min(.1,(t-rlast)/1000);rlast=t;if(rrun&&!pdrag){rpos=Math.min(1,rpos+dt*(rwpm/60)/rwords)}rDraw();requestAnimationFrame(rLoop)}
+ $('rshow').onclick=()=>{rshow=true;$('rview').hidden=false;rlast=0;rLayout();send({type:'cmd',action:'hello'});requestAnimationFrame(rLoop)};
+ $('rbackc').onclick=()=>{rshow=false;$('rview').hidden=true};
+ $('rmir2').onclick=()=>{vMirror=!vMirror;rLayout()};
+ $('rvplay').onclick=c('toggle');$('rvrew').onclick=c('seek',-10);$('rvfwd').onclick=c('seek',10);$('rvslow').onclick=c('wpmd',-5);$('rvfast').onclick=c('wpmd',5);
+ window.addEventListener('resize',()=>{if(rshow)rLayout()});
+ const rv=$('rview');
+ rv.addEventListener('pointerdown',e=>{if(e.target.closest('.ui'))return;rv.setPointerCapture(e.pointerId);pdrag={y:e.clientY,p:rpos,moved:false,t:0}});
+ rv.addEventListener('pointermove',e=>{if(!pdrag)return;const dy=e.clientY-pdrag.y;if(Math.abs(dy)>8)pdrag.moved=true;if(pdrag.moved){rpos=Math.max(0,Math.min(1,pdrag.p-dy/rH()));rDraw();const n=Date.now();if(n-pdrag.t>70){pdrag.t=n;send({type:'cmd',action:'pos',value:rpos})}}});
+ const rend=()=>{if(!pdrag)return;const d=pdrag;pdrag=null;if(d.moved)send({type:'cmd',action:'pos',value:rpos});else send({type:'cmd',action:'toggle'})};
+ rv.addEventListener('pointerup',rend);rv.addEventListener('pointercancel',rend);
+
  $('rpaste').onclick=async()=>{try{$('rtxt').value=await navigator.clipboard.readText()}catch{$('rtxt').focus();toast('Tieni premuto nel riquadro e scegli Incolla')}};
- $('rsend').onclick=()=>{const t=$('rtxt').value.trim();if(!t)return toast('Scrivi o incolla prima il testo');if(!conn||!conn.open)return toast('Non collegato all\'iPad');send({type:'cmd',action:'script',value:{text:t.slice(0,300000),name:'Dal telefono'}});$('rtxt').value='';toast('Inviato all\'iPad')};
+ $('rsend').onclick=()=>{const t=$('rtxt').value.trim();if(!t)return toast('Scrivi o incolla prima il testo');if(!isUp())return toast('Non collegato');send({type:'cmd',action:'script',value:{text:t.slice(0,300000),name:'Dal telefono'}});$('rtxt').value='';toast('Inviato all\'iPad')};
  try{navigator.wakeLock&&navigator.wakeLock.request('screen')}catch{}
- setupPeer();return;
+ setupLink();return;
 }
 
 /* ---------- editor e copioni ---------- */
@@ -210,9 +276,9 @@ const script=$('script');
 function words(){const t=script.value.trim();return t?t.split(/\s+/).length:0}
 function title(s,i){if(s.name)return s.name.slice(0,28);const l=(s.text||'').trim().split('\n')[0].slice(0,28);return l||('Copione '+(i+1))}
 function renderTabs(){$('tabs').innerHTML='';scripts.forEach((s,i)=>{const b=document.createElement('button');b.className='tab'+(i===cur?' on':'');b.textContent=title(s,i);b.onclick=()=>{cur=i;loadScript();saveS()};$('tabs').appendChild(b)})}
-function loadScript(){script.value=scripts[cur].text;renderTabs();stats()}
+function loadScript(){script.value=scripts[cur].text;renderTabs();stats();queueText()}
 function stats(){const w=words();$('stats').textContent=w+' parole · circa '+Math.max(1,Math.round(w/S.wpm))+' min a '+S.wpm+' WPM'}
-script.oninput=()=>{scripts[cur].text=script.value;stats();saveS();clearTimeout(script._t);script._t=setTimeout(renderTabs,400)};
+script.oninput=()=>{scripts[cur].text=script.value;stats();saveS();queueText();clearTimeout(script._t);script._t=setTimeout(renderTabs,400)};
 $('newScript').onclick=()=>{scripts.push({id:Date.now(),text:''});cur=scripts.length-1;loadScript();saveS();script.focus()};
 $('del').onclick=()=>{if(!confirm('Eliminare questo copione?'))return;scripts.splice(cur,1);if(!scripts.length)scripts=[{id:Date.now(),text:''}];cur=Math.max(0,Math.min(cur,scripts.length-1));loadScript();saveS()};
 function normalize(t){return String(t).replace(/\r\n?/g,'\n').replace(/[\u00a0\u2007\u202f]/g,' ').replace(/[\u200b\ufeff]/g,'').replace(/[ \t]+\n/g,'\n').replace(/\n[ \t]+/g,'\n').replace(/\n{3,}/g,'\n\n').trim()}
@@ -261,7 +327,7 @@ function applyStyle(){
  txt.style.fontSize=S.font+'px';txt.style.lineHeight=S.line;txt.style.textAlign=S.align;txt.style.color=S.color;
  scroller.style.padding=`${Math.round(h*GUIDE)}px ${S.margin}% ${Math.round(h*(1-GUIDE))}px`;
  $('mir').style.transform=(open&&S.mirror==='1')?'scaleX(-1)':'';
- draw();
+ draw();queueText();
 }
 function textH(){return txt.offsetHeight}
 function maxOff(){return Math.max(1,textH())}
@@ -364,9 +430,9 @@ function command(m){
  else if(a==='script'){addText(v.text,v.name||'Dal telefono')}
 }
 let bt=0;function broadcast(){const now=Date.now();if(now-bt<120&&running)return;bt=now;send({type:'state',running,open,wpm:S.wpm,pos:open?offset/maxOff():0,time:$('time').textContent})}
-setInterval(()=>{if(conn)broadcast()},1000);
+setInterval(()=>{if(isUp())broadcast()},1000);
 
-syncSettings();loadScript();setupPeer();
+syncSettings();loadScript();setupLink();
 })();
 </script>
 </body>
