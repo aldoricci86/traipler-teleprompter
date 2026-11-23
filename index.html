@@ -108,7 +108,8 @@ select{width:100%;background:#0b100c;border:1px solid var(--line);border-radius:
     <button class="btn primary" id="paste">Incolla testo</button>
     <button class="btn" id="import">Carica documento</button>
     <button class="btn ghost" id="clear">Svuota</button>
-    <input hidden type="file" id="file" accept=".txt,.md,.rtf,.docx,.pdf,.html,.htm,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+    <button class="btn ghost" id="backup">Salva copia di tutti i copioni</button>
+    <input hidden type="file" id="file" accept=".txt,.md,.rtf,.docx,.pdf,.html,.htm,.json,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
    </div>
    <div class="loading" id="loading" hidden>Leggo il documento…</div>
    <textarea id="script" placeholder="Premi «Incolla testo» oppure «Carica documento» (Word, PDF, TXT).&#10;Puoi anche scrivere qui o inviare il testo dal telefono." autocapitalize="sentences"></textarea>
@@ -300,7 +301,9 @@ async function readFile(f){
  if(n.endsWith('.rtf'))return t.replace(/\\par[d]?/g,'\n').replace(/\{\\\*[^}]*\}/g,'').replace(/\\'([0-9a-f]{2})/gi,(m,h)=>String.fromCharCode(parseInt(h,16))).replace(/\\[a-z]+-?\d* ?/gi,'').replace(/[{}]/g,'');
  if(n.endsWith('.html')||n.endsWith('.htm'))return new DOMParser().parseFromString(t,'text/html').body.innerText||'';
  return t}
+$('backup').onclick=()=>{const b=new Blob([JSON.stringify({tipo:'traipler-copioni',scripts},null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='copioni-traipler-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();toast(scripts.length+' copioni salvati nel file')};
 async function importFile(f){
+ if(/\.json$/i.test(f.name)){try{const j=JSON.parse(await f.text());if(j.tipo!=='traipler-copioni'||!Array.isArray(j.scripts))throw 0;let n=0;j.scripts.forEach(x=>{if(x&&x.text&&!scripts.some(y=>y.text===x.text)){scripts.push({id:Date.now()+n,text:x.text,name:x.name||''});n++}});cur=scripts.length-1;loadScript();saveS();toast(n+' copioni ripristinati')}catch{toast('File di copia non valido')}return}
  if(/\.(pages|doc|key|odt)$/i.test(f.name)){toast('Salva il documento come Word (.docx) o PDF e riprova');return}
  $('loading').hidden=false;
  try{const t=await Promise.race([readFile(f),new Promise((_,ko)=>setTimeout(()=>ko(new Error('Non riesco a leggere il file: salvalo come Word o incolla il testo')),30000))]);addText(t,f.name.replace(/\.[^.]+$/,''))}catch(e){toast(e.message||'Non riesco a leggere il file')}
