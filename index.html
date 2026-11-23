@@ -95,12 +95,18 @@ select{width:100%;background:#0b100c;border:1px solid var(--line);border-radius:
 @media(min-width:900px){#remote{max-width:1100px!important}.rgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:22px}}
 .rrow{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px}.rrow.on{background:var(--panel2);outline:1px solid var(--green)}.rrow .tt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;cursor:pointer}.rrow .tt small{color:var(--muted);margin-left:8px}.rrow button{min-height:36px;padding:6px 10px;font-size:12px}
 @media(min-width:1000px){
- #remote{max-width:none!important;padding-right:430px!important}
- #rview{left:auto!important;bottom:auto!important;right:24px!important;top:16px!important;width:384px;height:min(calc(100vh - 32px),590px);border:1px solid #1d3a32;border-radius:20px;z-index:20}
- #rbackc,#rshow{display:none!important}
- #rview .ui{display:none!important}
- #rview{height:auto}
- .rview-tag{position:fixed;right:24px;top:0;font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;z-index:21;padding:0}
+ html:not(.solo) #remote{max-width:none!important;padding-right:430px!important}
+ html:not(.solo) #rview{left:auto!important;bottom:auto!important;right:24px!important;top:16px!important;width:384px;height:min(calc(100vh - 32px),590px);border:1px solid #1d3a32;border-radius:20px;z-index:20}
+ html:not(.solo) #rbackc,html:not(.solo) #rshow{display:none!important}
+ html:not(.solo) #rview .ui{display:none!important}
+ html:not(.solo) #rdock{display:flex}
+}
+html.solo #remote,html.solo #rbuild{display:none!important}
+html.solo #rbackc{display:none!important}
+#rdock{display:none;position:fixed;right:24px;z-index:21;flex-direction:column;gap:6px}
+#rdock .r{display:flex;gap:5px;flex-wrap:nowrap}
+#rdock button{flex:1;min-width:0;padding:9px 4px;min-height:40px;font-size:13px;white-space:nowrap}
+#rdock .wpm{align-self:center;font-size:12px;color:var(--muted);min-width:70px;text-align:center}
 }
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#d4f7dc;color:#102516;padding:11px 15px;border-radius:12px;font-size:13px;font-weight:700;opacity:0;transition:.2s;pointer-events:none;z-index:99}.toast.show{opacity:1}
 </style>
@@ -173,8 +179,11 @@ select{width:100%;background:#0b100c;border:1px solid var(--line);border-radius:
 </div>
 
 <div id="remote" hidden>
- <div id="rbuild" style="position:fixed;left:14px;bottom:8px;font-size:12px;color:#ffb347;z-index:70"></div>
- <h1>Telecomando Traipler <small style="font-size:12px;color:var(--muted)">v19 · PC fedele all'iPad</small></h1><div class="muted" id="rstatus">Connessione all'iPad…</div>
+ <div id="rdock"><div class="r"><button class="btn" data-a="start">⇈</button><button class="btn" data-a="seek" data-v="-5">−5</button><button class="btn" data-a="seek" data-v="-10">−10</button><button class="btn primary" data-a="toggle" id="rdplay">▶</button><button class="btn" data-a="seek" data-v="10">+10</button><button class="btn" data-a="seek" data-v="5">+5</button><button class="btn" data-a="end">⇊</button></div>
+<div class="r"><button class="btn" data-a="wpmd" data-v="-5">− lento</button><span class="wpm" id="rdwpm">110 WPM</span><button class="btn" data-a="wpmd" data-v="5">+ veloce</button><button class="btn" data-a="fontd" data-v="-4">A−</button><button class="btn" data-a="fontd" data-v="4">A+</button></div>
+<div class="r"><button class="btn" id="rdpop">↗ Apri la vista in una finestra a parte</button></div></div>
+<div id="rbuild" style="position:fixed;left:14px;bottom:8px;font-size:12px;color:#ffb347;z-index:70"></div>
+ <h1>Telecomando Traipler <small style="font-size:12px;color:var(--muted)">v20 · PC fedele all'iPad</small></h1><div class="muted" id="rstatus">Connessione all'iPad…</div>
  <div class="rgrid">
  <div class="rcol">
   <button class="btn primary big" id="rshow" style="margin-top:14px">Vedi il testo che scorre</button>
@@ -223,10 +232,11 @@ select{width:100%;background:#0b100c;border:1px solid var(--line);border-radius:
 <div class="toast" id="toast"></div>
 <script src="https://unpkg.com/mqtt@5.3.4/dist/mqtt.min.js"></script>
 <script>
-const BUILD='v19';
+const BUILD='v20';
+const SOLO=/[?&]solo=1/.test(location.search);if(SOLO)document.documentElement.classList.add('solo');
 /* aggiornamento automatico: se online c'e' una versione piu' nuova, ricarica da solo (la chiave del telecomando nell'indirizzo resta) */
 (async()=>{try{const t=await (await fetch('./index.html?c='+Date.now(),{cache:'no-store'})).text();const m=t.match(/const BUILD='(v\d+)'/);
- if(m&&m[1]!==BUILD){const k='tp_reload_'+m[1];if(!sessionStorage.getItem(k)){sessionStorage.setItem(k,'1');location.replace(location.pathname+'?u='+m[1]+location.hash)}}}catch(e){}})();
+ if(m&&m[1]!==BUILD){const k='tp_reload_'+m[1];if(!sessionStorage.getItem(k)){sessionStorage.setItem(k,'1');{const q=new URLSearchParams(location.search);q.set('u',m[1]);location.replace(location.pathname+'?'+q.toString()+location.hash)}}}}catch(e){}})();
 
 (()=>{
 const $=id=>document.getElementById(id),remoteMode=new URLSearchParams(location.search).has('remote');
@@ -334,19 +344,21 @@ if(remoteMode){
  const rH=()=>Math.max(1,$('rtext').offsetHeight);
  const rDraw=()=>{$('rscroll').style.transform='translateY('+(-rpos*rH())+'px)'};
  let rk=1,rvw=744,rvh=1133;
- function rLayout(){const rvE=$('rview'),desk=matchMedia('(min-width:1000px)').matches,availW=desk?Math.min(Math.round(innerWidth*.42),680):innerWidth,availH=desk?innerHeight-32:innerHeight;
+ function rLayout(){const rvE=$('rview'),desk=matchMedia('(min-width:1000px)').matches&&!SOLO,availW=desk?Math.min(Math.round(innerWidth*.42),680):innerWidth,availH=desk?innerHeight-32:innerHeight;
   rk=Math.min(availW/rvw,availH/rvh);const pw=Math.round(rvw*rk),ph=Math.round(rvh*rk);
-  if(desk){rvE.style.width=pw+'px';rvE.style.height=ph+'px';$('remote').style.setProperty('padding-right',(pw+56)+'px','important')}else{rvE.style.width='';rvE.style.height='';$('remote').style.removeProperty('padding-right')}
+  if(desk){rvE.style.width=pw+'px';rvE.style.height=ph+'px';$('remote').style.setProperty('padding-right',(pw+56)+'px','important');const dk=$('rdock');dk.style.top=(16+ph+10)+'px';dk.style.width=pw+'px'}else{rvE.style.width='';rvE.style.height='';$('remote').style.removeProperty('padding-right')}
   const m=$('rmir');m.style.cssText='position:absolute;left:0;top:0;overflow:hidden;width:'+rvw+'px;height:'+rvh+'px;transform-origin:0 0;transform:'+(vMirror?'translateX('+(desk?pw:innerWidth-(innerWidth-pw)/2)+'px) scale('+(-rk)+','+rk+')':'translateX('+(desk?0:(innerWidth-pw)/2)+'px) scale('+rk+')');
   const oy=desk?0:Math.round((innerHeight-ph)/2);if(!desk)m.style.top=oy+'px';$('rguide').style.top=Math.round(oy+ph*.3)+'px';$('rdim').style.height=Math.round(oy+ph*.3)+'px';
   const t=$('rtext');t.style.fontSize=R.font+'px';t.style.lineHeight=R.line;t.style.textAlign=R.align;t.style.color=R.color;$('rscroll').style.padding=Math.round(rvh*.3)+'px '+R.margin+'% '+Math.round(rvh*.7)+'px';$('rempty').hidden=!!R.text;rDraw()}
  const parts={};window.remoteText=m=>{if(m.tv===Rtv)return;(parts[m.tv]=parts[m.tv]||{n:m.n,p:{}}).p[m.i]=m.part;const q=parts[m.tv];if(Object.keys(q.p).length<q.n)return;
   R.text=Array.from({length:q.n},(_,k)=>q.p[k]).join('');Rtv=m.tv;for(const k in parts)delete parts[k];
   R.font=m.font||64;R.line=m.line||1.5;R.align=m.align||'center';R.color=m.color||'#ffffff';R.margin=m.margin||7;$('rtext').textContent=R.text;rwords=Math.max(1,R.text.trim()?R.text.trim().split(/\s+/).length:1);if(!$('rtxt').dataset.dirty)$('rtxt').value=R.text;rLayout()};
- window.remoteState=m=>{$('rempty').innerHTML=R.text?'':"Aspetto il testo dall'iPad…<br>Apri il copione sull'iPad.";if(!m.vw){$('rstatus').dataset.old='1'}else delete $('rstatus').dataset.old;$('rbuild').textContent=m.b?('iPad '+m.b+' · vista '+m.vw+'×'+m.vh):"iPad con app VECCHIA: chiudi e riapri l'app sull'iPad (anche due volte) per avere la stessa vista";if(m.vw&&m.vh&&(Math.abs(m.vw-rvw)>1||Math.abs(m.vh-rvh)>1)){rvw=m.vw;rvh=m.vh;if(rshow)rLayout()}rrun=!!m.running;rvoice=!!m.voice;rwpm=m.wpm;$('rplay').textContent=rrun?'Ⅱ Pausa':'▶ Play';$('rvplay').textContent=rrun?'Ⅱ':'▶';$('rwpmv').textContent=m.wpm+' WPM';$('rvwpm').textContent=m.wpm+' WPM';$('rtime').textContent=m.time;if(!dragging){$('rpos').value=Math.round(m.pos*1000);$('rposv').textContent=Math.round(m.pos*100)+'%'}if(!pdrag){const d=m.pos-rpos;if(Date.now()>wLock)rpos=Math.abs(d)>.01?m.pos:rpos+d*.35;if(rshow)rDraw()}setStatus((m.open?(rrun?'● In riproduzione':'● In pausa'):'● Collegato · teleprompter chiuso')+' · '+m.time)};
+ window.remoteState=m=>{$('rempty').innerHTML=R.text?'':"Aspetto il testo dall'iPad…<br>Apri il copione sull'iPad.";if(!m.vw){$('rstatus').dataset.old='1'}else delete $('rstatus').dataset.old;$('rbuild').textContent=m.b?('iPad '+m.b+' · vista '+m.vw+'×'+m.vh):"iPad con app VECCHIA: chiudi e riapri l'app sull'iPad (anche due volte) per avere la stessa vista";if(m.vw&&m.vh&&(Math.abs(m.vw-rvw)>1||Math.abs(m.vh-rvh)>1)){rvw=m.vw;rvh=m.vh;if(rshow)rLayout()}rrun=!!m.running;rvoice=!!m.voice;rwpm=m.wpm;$('rplay').textContent=rrun?'Ⅱ Pausa':'▶ Play';$('rdplay').textContent=rrun?'Ⅱ':'▶';$('rdwpm').textContent=m.wpm+' WPM';$('rvplay').textContent=rrun?'Ⅱ':'▶';$('rwpmv').textContent=m.wpm+' WPM';$('rvwpm').textContent=m.wpm+' WPM';$('rtime').textContent=m.time;if(!dragging){$('rpos').value=Math.round(m.pos*1000);$('rposv').textContent=Math.round(m.pos*100)+'%'}if(!pdrag){const d=m.pos-rpos;if(Date.now()>wLock)rpos=Math.abs(d)>.01?m.pos:rpos+d*.35;if(rshow)rDraw()}setStatus((m.open?(rrun?'● In riproduzione':'● In pausa'):'● Collegato · teleprompter chiuso')+' · '+m.time)};
  function rLoop(t){if(!rshow)return;if(!rlast)rlast=t;const dt=Math.min(.1,(t-rlast)/1000);rlast=t;if(rrun&&!rvoice&&!pdrag&&Date.now()>wLock){rpos=Math.min(1,rpos+dt*(rwpm/60)/rwords)}rDraw();requestAnimationFrame(rLoop)}
  const openView=()=>{rshow=true;$('rview').hidden=false;rlast=0;rLayout();hello();requestAnimationFrame(rLoop)};
- $('rshow').onclick=openView;if(matchMedia('(min-width:1000px)').matches)setTimeout(openView,0);
+ $('rshow').onclick=openView;if(SOLO||matchMedia('(min-width:1000px)').matches)setTimeout(openView,0);
+ document.querySelectorAll('#rdock [data-a]').forEach(b=>b.onclick=()=>send({type:'cmd',action:b.dataset.a,value:b.dataset.v===undefined?undefined:+b.dataset.v}));
+ $('rdpop').onclick=()=>{const q=new URLSearchParams(location.search);q.set('solo','1');const u=location.origin+location.pathname+'?'+q.toString()+location.hash;const w=window.open(u,'tpview','popup=yes,width=1100,height=760');if(!w){try{navigator.clipboard.writeText(u)}catch(e){}toast('Il browser ha bloccato la finestra: consenti i popup, oppure incolla il link copiato in una nuova finestra')}};
  $('rbackc').onclick=()=>{rshow=false;$('rview').hidden=true};
  $('rmir2').onclick=()=>{vMirror=!vMirror;rLayout()};
  $('rvtop').onclick=c('start');$('rvend').onclick=c('end');$('rvrew5').onclick=c('seek',-5);$('rvfwd5').onclick=c('seek',5);$('rvplay').onclick=c('toggle');$('rvrew').onclick=c('seek',-10);$('rvfwd').onclick=c('seek',10);$('rvslow').onclick=c('wpmd',-5);$('rvfast').onclick=c('wpmd',5);
