@@ -126,6 +126,8 @@ select{width:100%;background:#0b100c;border:1px solid var(--line);border-radius:
      <div class="field"><label>Margini <b id="marginv"></b></label><input id="margin" type="range" min="2" max="25"></div>
      <div class="field"><label>Specchiatura</label><select id="mirror"><option value="1">Sì (per vetro teleprompter)</option><option value="0">No</option></select></div>
      <div class="field"><label>Allineamento</label><select id="align"><option value="center">Centrato</option><option value="left">Sinistra</option></select></div>
+     <div class="field" style="grid-column:1/-1"><label>Scorrimento a voce (opzionale)</label><select id="voice"><option value="0">Spento: scorre a velocità fissa</option><option value="1">Acceso: il testo segue il tuo parlato</option></select><div class="muted" id="voicehint" style="margin-top:6px" hidden>Premi play: il microfono ascolta e il testo scorre mentre leggi. Il riconoscimento vocale lo fa il servizio del tuo dispositivo (Apple o Google): l'audio passa da loro.</div></div>
+     <div class="field" id="vlangbox" hidden><label>Lingua che parli</label><select id="vlang"><option value="it-IT">Italiano</option><option value="en-US">English</option><option value="es-ES">Español</option><option value="fr-FR">Français</option><option value="de-DE">Deutsch</option></select></div>
      <div class="field"><label>Colore testo</label><select id="color"><option value="#ffffff">Bianco</option><option value="#ffe14d">Giallo</option><option value="#8ce0a0">Verde</option></select></div>
     </div>
     <div class="pair"><img id="qr" alt="QR telecomando"><div class="pairinfo"><b>Telecomando iPhone</b>Inquadra il QR con l'iPhone. Serve Internet su entrambi solo per collegarli.<button class="btn" id="copyurl" style="margin-top:8px;min-height:38px;padding:8px 12px;font-size:13px">Copia il link del telecomando (per PC)</button><div id="pairurl" style="word-break:break-all;color:var(--green);margin-top:6px;font-size:11px"></div></div></div>
@@ -140,7 +142,7 @@ select{width:100%;background:#0b100c;border:1px solid var(--line);border-radius:
  <div id="guide"><i></i></div>
  <div id="cd" hidden></div>
  <div class="ui" id="utop">
-  <button class="btn" id="back">← Modifica</button>
+  <button class="btn" id="back">← Modifica</button><span class="badge" id="mic" hidden style="color:var(--green)">● Ti ascolto</span>
   <span class="badge" id="time">00:00 / 00:00</span>
   <button class="btn" id="fm">A−</button><button class="btn" id="fp">A+</button>
   <button class="btn" id="mirrorBtn">⇋ Specchia</button>
@@ -184,7 +186,7 @@ select{width:100%;background:#0b100c;border:1px solid var(--line);border-radius:
 (()=>{
 const $=id=>document.getElementById(id),remoteMode=new URLSearchParams(location.search).has('remote');
 const GUIDE=.30; // il testo si legge sulla riga a 30% dall'alto
-const DEF={wpm:110,font:64,line:1.5,margin:7,mirror:'1',count:'0',align:'center',color:'#ffffff'};
+const DEF={wpm:110,font:64,line:1.5,margin:7,mirror:'1',count:'0',voice:'0',vlang:'it-IT',align:'center',color:'#ffffff'};
 let S={...DEF},scripts=[],cur=0;
 try{Object.assign(S,JSON.parse(localStorage.getItem('tp-settings')||'{}'))}catch{}
 try{scripts=JSON.parse(localStorage.getItem('tp-scripts')||'[]')}catch{}
@@ -252,13 +254,13 @@ if(remoteMode){
  $('rplay').onclick=c('toggle');$('ropen').onclick=c('open');$('rrew').onclick=c('seek',-10);$('rfwd').onclick=c('seek',10);$('rstart').onclick=c('start');
  $('rmirror').onclick=c('mirror');$('rslow').onclick=c('wpmd',-5);$('rfast').onclick=c('wpmd',5);$('rfm').onclick=c('fontd',-4);$('rfp').onclick=c('fontd',4);
  let dragging=false;$('rpos').oninput=()=>{dragging=true;$('rposv').textContent=Math.round($('rpos').value/10)+'%';send({type:'cmd',action:'pos',value:$('rpos').value/1000})};$('rpos').onchange=()=>{dragging=false};
- const R={text:'',font:64,line:1.5,align:'center',color:'#ffffff',margin:7,mirror:'1'};let rpos=0,rrun=false,rwpm=110,rshow=false,vMirror=false,pdrag=null,rwords=1,rlast=0;
+ const R={text:'',font:64,line:1.5,align:'center',color:'#ffffff',margin:7,mirror:'1'};let rpos=0,rvoice=false,rrun=false,rwpm=110,rshow=false,vMirror=false,pdrag=null,rwords=1,rlast=0;
  const rH=()=>Math.max(1,$('rtext').offsetHeight);
  const rDraw=()=>{$('rscroll').style.transform='translateY('+(-rpos*rH())+'px)'};
  function rLayout(){const h=innerHeight,f=Math.max(22,Math.round(R.font*innerWidth/744*.95));const t=$('rtext');t.style.fontSize=f+'px';t.style.lineHeight=R.line;t.style.textAlign=R.align;t.style.color=R.color;$('rscroll').style.padding=Math.round(h*.3)+'px '+R.margin+'% '+Math.round(h*.7)+'px';$('rmir').style.transform=vMirror?'scaleX(-1)':'';$('rempty').hidden=!!R.text;rDraw()}
  window.remoteText=m=>{R.text=m.text||'';R.font=m.font||64;R.line=m.line||1.5;R.align=m.align||'center';R.color=m.color||'#ffffff';R.margin=m.margin||7;$('rtext').textContent=R.text;rwords=Math.max(1,R.text.trim()?R.text.trim().split(/\s+/).length:1);rLayout()};
- window.remoteState=m=>{rrun=!!m.running;rwpm=m.wpm;$('rplay').textContent=rrun?'Ⅱ Pausa':'▶ Play';$('rvplay').textContent=rrun?'Ⅱ':'▶';$('rwpmv').textContent=m.wpm+' WPM';$('rvwpm').textContent=m.wpm+' WPM';$('rtime').textContent=m.time;if(!dragging){$('rpos').value=Math.round(m.pos*1000);$('rposv').textContent=Math.round(m.pos*100)+'%'}if(!pdrag){const d=m.pos-rpos;rpos=Math.abs(d)>.01?m.pos:rpos+d*.35;if(rshow)rDraw()}setStatus((m.open?(rrun?'● In riproduzione':'● In pausa'):'● Collegato · teleprompter chiuso')+' · '+m.time)};
- function rLoop(t){if(!rshow)return;if(!rlast)rlast=t;const dt=Math.min(.1,(t-rlast)/1000);rlast=t;if(rrun&&!pdrag){rpos=Math.min(1,rpos+dt*(rwpm/60)/rwords)}rDraw();requestAnimationFrame(rLoop)}
+ window.remoteState=m=>{rrun=!!m.running;rvoice=!!m.voice;rwpm=m.wpm;$('rplay').textContent=rrun?'Ⅱ Pausa':'▶ Play';$('rvplay').textContent=rrun?'Ⅱ':'▶';$('rwpmv').textContent=m.wpm+' WPM';$('rvwpm').textContent=m.wpm+' WPM';$('rtime').textContent=m.time;if(!dragging){$('rpos').value=Math.round(m.pos*1000);$('rposv').textContent=Math.round(m.pos*100)+'%'}if(!pdrag){const d=m.pos-rpos;rpos=Math.abs(d)>.01?m.pos:rpos+d*.35;if(rshow)rDraw()}setStatus((m.open?(rrun?'● In riproduzione':'● In pausa'):'● Collegato · teleprompter chiuso')+' · '+m.time)};
+ function rLoop(t){if(!rshow)return;if(!rlast)rlast=t;const dt=Math.min(.1,(t-rlast)/1000);rlast=t;if(rrun&&!rvoice&&!pdrag){rpos=Math.min(1,rpos+dt*(rwpm/60)/rwords)}rDraw();requestAnimationFrame(rLoop)}
  $('rshow').onclick=()=>{rshow=true;$('rview').hidden=false;rlast=0;rLayout();send({type:'cmd',action:'hello'});requestAnimationFrame(rLoop)};
  $('rbackc').onclick=()=>{rshow=false;$('rview').hidden=true};
  $('rmir2').onclick=()=>{vMirror=!vMirror;rLayout()};
@@ -328,21 +330,68 @@ $('clear').onclick=()=>{if(script.value.trim()&&!confirm('Svuotare il copione?')
 ['dragleave','drop'].forEach(ev=>script.addEventListener(ev,e=>{e.preventDefault();script.classList.remove('drop')}));
 script.addEventListener('drop',e=>{const f=e.dataTransfer&&e.dataTransfer.files[0];if(f)importFile(f);else{const t=e.dataTransfer&&e.dataTransfer.getData('text');if(t)addText(t,'')}});
 function syncSettings(){
- $('wpm').value=S.wpm;$('font').value=S.font;$('line').value=S.line;$('margin').value=S.margin;$('mirror').value=S.mirror;$('align').value=S.align;$('color').value=S.color;
+ $('wpm').value=S.wpm;$('font').value=S.font;$('line').value=S.line;$('margin').value=S.margin;$('mirror').value=S.mirror;$('align').value=S.align;$('voice').value=S.voice;$('vlang').value=S.vlang;$('voicehint').hidden=S.voice!=='1';$('vlangbox').hidden=S.voice!=='1';$('color').value=S.color;
  $('wpmv').textContent=S.wpm+' WPM';$('fontv').textContent=S.font+' px';$('linev').textContent=S.line;$('marginv').textContent=S.margin+'%';$('wpmBadge').textContent=S.wpm+' WPM';
 }
 ['wpm','font','line','margin'].forEach(k=>$(k).oninput=()=>{S[k]=+$(k).value;syncSettings();applyStyle();stats();saveS()});
-['mirror','align','color'].forEach(k=>$(k).onchange=()=>{S[k]=$(k).value;syncSettings();applyStyle();saveS()});
+['mirror','align','color','voice','vlang'].forEach(k=>$(k).onchange=()=>{S[k]=$(k).value;syncSettings();applyStyle();saveS()});
 
 /* ---------- teleprompter ---------- */
 let open=false,running=false,offset=0,raf=0,lastT=0,cdTimer=null,hideT=null,wake=null,vel=0;
 const pview=$('pview'),scroller=$('scroller'),txt=$('txt');
+
+/* ---------- scorrimento a voce (Web Speech API del dispositivo) ---------- */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let rec=null,vWanted=false,vPtr=0,vTarget=0,wTops=[],wNorm=[],wStart=[],vTrans='',vErr=0;
+const norm=t=>t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,'');
+function lev1(a,b){if(a===b)return true;if(Math.abs(a.length-b.length)>1||Math.min(a.length,b.length)<4)return false;let i=0;while(i<a.length&&a[i]===b[i])i++;if(a.slice(i+1)===b.slice(i+1)||a.slice(i)===b.slice(i+1)||a.slice(i+1)===b.slice(i))return true;return false}
+const wEq=(a,b)=>a&&b&&(a===b||lev1(a,b)||(a.length>=5&&b.length>=5&&(a.startsWith(b)||b.startsWith(a))));
+function buildWords(){
+ const t=txt.textContent,re=/\S+/g;let m;wNorm=[];wStart=[];
+ while((m=re.exec(t))){wNorm.push(norm(m[0]));wStart.push(m.index)}
+ wTops=[];const node=txt.firstChild;if(!node)return;
+ const base=scroller.getBoundingClientRect().top,r=document.createRange();
+ for(let i=0;i<wStart.length;i++){r.setStart(node,wStart[i]);r.setEnd(node,Math.min(node.length,wStart[i]+1));const b=r.getBoundingClientRect();wTops.push(b.top-base)}
+}
+const padTop=()=>Math.round((pview.clientHeight||innerHeight)*GUIDE);
+function wordOffset(i){i=Math.max(0,Math.min(wTops.length-1,i));return (wTops[i]||0)-padTop()}
+function syncPtr(){ // dopo uno spostamento a mano: ricalcola da che parola si riparte
+ if(!wTops.length)buildWords();let lo=0,hi=wTops.length-1;const y=offset+padTop();
+ while(lo<hi){const mid=(lo+hi)>>1;if(wTops[mid]<y-2)lo=mid+1;else hi=mid}
+ vPtr=lo;vTarget=offset;vTrans=''
+}
+function voiceMatch(spoken){
+ const T=spoken.map(norm).filter(Boolean).slice(-6);if(!T.length||!wNorm.length)return;
+ const from=Math.max(0,vPtr-6),to=Math.min(wNorm.length-1,vPtr+70);let best=-1,bs=0,bd=1e9;
+ for(let j=from;j<=to;j++){let sc=0;for(let k=1;k<=T.length;k++){const w=wNorm[j-k+1],t=T[T.length-k];if(wEq(w,t))sc++;else break}
+  const d=Math.abs(j+1-vPtr);const need=T.length>=2?2:1;
+  if(sc>=need&&(sc>bs||(sc===bs&&d<bd))){bs=sc;best=j;bd=d}}
+ if(best<0)return;
+ if(T.length===1&&best-vPtr>10)return; // una parola sola non basta per saltare lontano
+ vPtr=Math.max(vPtr-3,best+1);
+ vTarget=Math.max(0,Math.min(maxOff(),wordOffset(Math.min(vPtr,wTops.length-1))));
+}
+function startVoice(){
+ if(!SR){toast('Questo browser non ascolta il microfono: usa Safari o Chrome');S.voice='0';syncSettings();saveS();return false}
+ if(!wTops.length)buildWords();
+ vWanted=true;vErr=0;openRec();return true
+}
+function openRec(){
+ if(!vWanted)return;
+ try{rec=new SR();rec.lang=S.vlang;rec.continuous=true;rec.interimResults=true;rec.maxAlternatives=1}catch{return}
+ rec.onresult=e=>{let t='';for(let i=0;i<e.results.length;i++)t+=' '+e.results[i][0].transcript;vTrans=t;voiceMatch(t.trim().split(/\s+/));vErr=0};
+ rec.onerror=e=>{if(e.error==='not-allowed'||e.error==='service-not-allowed'){vWanted=false;toast('Microfono non consentito. Su iPad: Impostazioni, Safari, Microfono, oppure apri il teleprompter da Safari e non dalla Home');pausePlay()}else if(e.error==='no-speech'||e.error==='aborted'){/* riparte da onend */}else vErr++};
+ rec.onend=()=>{$('mic').hidden=!(vWanted&&open);if(vWanted&&vErr<6)setTimeout(openRec,250)};
+ rec.onstart=()=>{$('mic').hidden=false;vTrans=''};
+ try{rec.start()}catch{}
+}
+function stopVoice(){vWanted=false;$('mic').hidden=true;try{rec&&(rec.onend=null,rec.abort())}catch{};rec=null}
 function applyStyle(){
  const h=pview.clientHeight||innerHeight;
  txt.style.fontSize=S.font+'px';txt.style.lineHeight=S.line;txt.style.textAlign=S.align;txt.style.color=S.color;
  scroller.style.padding=`${Math.round(h*GUIDE)}px ${S.margin}% ${Math.round(h*(1-GUIDE))}px`;
  $('mir').style.transform=(open&&S.mirror==='1')?'scaleX(-1)':'';
- draw();queueText();
+ draw();queueText();wTops=[];
 }
 function textH(){return txt.offsetHeight}
 function maxOff(){return Math.max(1,textH())}
@@ -360,12 +409,13 @@ let seeking=false;
 function tick(t){
  if(!running)return;
  if(!lastT)lastT=t;const dt=Math.min(.1,(t-lastT)/1000);lastT=t;
- offset+=pxs()*dt;
- if(offset>=maxOff()){offset=maxOff();pausePlay();draw();broadcast();return}
+ if(S.voice==='1'){offset+=(vTarget-offset)*Math.min(1,dt*5);broadcast();if(vPtr>=wNorm.length&&Math.abs(vTarget-offset)<2){pausePlay();draw();return}}
+ else{offset+=pxs()*dt;
+ if(offset>=maxOff()){offset=maxOff();pausePlay();draw();broadcast();return}}
  draw();raf=requestAnimationFrame(tick);
 }
-function startPlay(){if(!words())return toast('Scrivi prima il copione');running=true;lastT=0;$('play').textContent='Ⅱ';cancelAnimationFrame(raf);raf=requestAnimationFrame(tick);showUI(true);broadcast()}
-function pausePlay(){running=false;cancelAnimationFrame(raf);$('play').textContent='▶';showUI(true);broadcast()}
+function startPlay(){if(!words())return toast('Scrivi prima il copione');if(S.voice==='1'){if(!wTops.length)buildWords();if(!vWanted){syncPtr();if(!startVoice())return}}running=true;lastT=0;$('play').textContent='Ⅱ';cancelAnimationFrame(raf);raf=requestAnimationFrame(tick);showUI(true);broadcast()}
+function pausePlay(){running=false;stopVoice();cancelAnimationFrame(raf);$('play').textContent='▶';showUI(true);broadcast()}
 function clearCd(){if(cdTimer){clearInterval(cdTimer);cdTimer=null}$('cd').hidden=true}
 function togglePlay(){
  if(cdTimer){clearCd();$('play').textContent='▶';return}
@@ -375,8 +425,8 @@ function togglePlay(){
  if(n){$('cd').hidden=false;$('cd').textContent=n;$('play').textContent='Ⅱ';cdTimer=setInterval(()=>{n--;if(n<=0){clearCd();startPlay()}else $('cd').textContent=n},1000)}
  else startPlay();
 }
-function seekSec(s){offset+=pxs()*s;draw();broadcast()}
-function toStart(){clearCd();offset=0;draw();broadcast()}
+function seekSec(s){offset+=pxs()*s;draw();if(S.voice==='1')syncPtr();broadcast()}
+function toStart(){clearCd();offset=0;draw();if(S.voice==='1')syncPtr();broadcast()}
 function showUI(stay){
  ['utop','ubot'].forEach(i=>$(i).classList.remove('off'));clearTimeout(hideT);
  if(running&&!stay)hideT=setTimeout(()=>{if(running&&!seeking)['utop','ubot'].forEach(i=>$(i).classList.add('off'))},3500);
@@ -410,13 +460,13 @@ function endDrag(){
  if(!drag)return;const d=drag;drag=null;
  if(!d.moved){ // tocco
   if(d.was){running=true;pausePlay()}else togglePlay();return}
- const fling=()=>{if(drag||Math.abs(vel)<.02){if(d.was&&!drag){startPlay()}else broadcast();return}offset+=vel*16;vel*=.94;draw();requestAnimationFrame(fling)};
+ const fling=()=>{if(drag||Math.abs(vel)<.02){if(d.was&&!drag){if(S.voice==='1')syncPtr();startPlay()}else broadcast();return}offset+=vel*16;vel*=.94;draw();requestAnimationFrame(fling)};
  fling();
 }
 pview.addEventListener('pointerup',endDrag);pview.addEventListener('pointercancel',endDrag);
 pview.addEventListener('wheel',e=>{e.preventDefault();offset+=e.deltaY;draw();showUI()},{passive:false});
 $('seek').addEventListener('input',()=>{seeking=true;offset=$('seek').value/1000*maxOff();draw();showUI(true)});
-$('seek').addEventListener('change',()=>{seeking=false;broadcast();showUI()});
+$('seek').addEventListener('change',()=>{seeking=false;if(S.voice==='1')syncPtr();broadcast();showUI()});
 $('play').onclick=e=>{e.stopPropagation();togglePlay()};
 $('toStart').onclick=toStart;$('rew').onclick=()=>seekSec(-10);$('fwd').onclick=()=>seekSec(10);
 $('back').onclick=closePrompt;
@@ -441,10 +491,10 @@ function command(m){
  else if(a==='mirror'){toggleMirror()}
  else if(a==='wpmd'){setWpm(S.wpm+v)}
  else if(a==='fontd'){setFont(S.font+v)}
- else if(a==='pos'){offset=v*maxOff();draw();broadcast()}
+ else if(a==='pos'){offset=v*maxOff();draw();if(S.voice==='1')syncPtr();broadcast()}
  else if(a==='script'){addText(v.text,v.name||'Dal telefono')}
 }
-let bt=0;function broadcast(){const now=Date.now();if(now-bt<120&&running)return;bt=now;send({type:'state',running,open,wpm:S.wpm,pos:open?offset/maxOff():0,time:$('time').textContent})}
+let bt=0;function broadcast(){const now=Date.now();if(now-bt<120&&running)return;bt=now;send({type:'state',voice:S.voice==='1',running,open,wpm:S.wpm,pos:open?offset/maxOff():0,time:$('time').textContent})}
 setInterval(()=>{if(isUp())broadcast()},1000);
 
 syncSettings();loadScript();setupLink();
