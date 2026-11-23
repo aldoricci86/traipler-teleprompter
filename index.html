@@ -90,6 +90,9 @@ select{width:100%;background:#0b100c;border:1px solid var(--line);border-radius:
 #rbot{bottom:0;background:linear-gradient(#0000,#000e);padding-bottom:max(14px,env(safe-area-inset-bottom))}
 #rview .ui{flex-wrap:nowrap;gap:6px;justify-content:space-between}#rview .ui .row{flex-wrap:nowrap;gap:6px}#rview .btn,#rview .badge{white-space:nowrap}#rview .btn{min-width:0;padding:10px 12px;min-height:46px;font-size:14px}#rview .badge{min-width:0;font-size:13px}
 #rempty{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);text-align:center;padding:30px;z-index:1}
+.rgrid{display:block}
+@media(min-width:900px){#remote{max-width:1100px!important}.rgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:22px}}
+.rrow{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px}.rrow.on{background:var(--panel2);outline:1px solid var(--green)}.rrow .tt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;cursor:pointer}.rrow .tt small{color:var(--muted);margin-left:8px}.rrow button{min-height:36px;padding:6px 10px;font-size:12px}
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#d4f7dc;color:#102516;padding:11px 15px;border-radius:12px;font-size:13px;font-weight:700;opacity:0;transition:.2s;pointer-events:none;z-index:99}.toast.show{opacity:1}
 </style>
 </head>
@@ -162,16 +165,42 @@ select{width:100%;background:#0b100c;border:1px solid var(--line);border-radius:
 
 <div id="remote" hidden>
  <h1>Telecomando Traipler</h1><div class="muted" id="rstatus">Connessione all'iPad…</div>
- <button class="btn primary big" id="rshow" style="margin-top:14px">Vedi il testo che scorre</button>
- <div class="twocol" style="margin-top:10px"><button class="btn big" id="rplay">▶ Play / Pausa</button><button class="btn big" id="ropen">Apri teleprompter</button></div>
- <div class="sl"><span>Posizione nel testo</span><b id="rposv">0%</b></div><input id="rpos" type="range" min="0" max="1000" value="0">
- <div class="twocol"><button class="btn big" id="rrew">−10 s</button><button class="btn big" id="rfwd">+10 s</button><button class="btn big" id="rstart">Dall'inizio</button><button class="btn big" id="rmirror">⇋ Specchia</button></div>
- <div class="sl"><span>Velocità</span><b id="rwpmv">150 WPM</b></div>
- <div class="twocol"><button class="btn big" id="rslow">− più lento</button><button class="btn big" id="rfast">+ più veloce</button></div>
- <div class="twocol"><button class="btn big" id="rfm">A− testo</button><button class="btn big" id="rfp">A+ testo</button></div>
- <div class="sl" style="margin-top:26px"><span>Invia un testo all'iPad</span></div>
- <textarea id="rtxt" placeholder="Incolla qui il copione e premi Invia" style="width:100%;min-height:130px;background:#0b100c;border:1px solid var(--line);border-radius:12px;padding:12px;font-size:16px"></textarea>
- <div class="twocol"><button class="btn big" id="rpaste">Incolla</button><button class="btn primary big" id="rsend">Invia all'iPad</button></div>
+ <div class="rgrid">
+ <div class="rcol">
+  <button class="btn primary big" id="rshow" style="margin-top:14px">Vedi il testo che scorre</button>
+  <div class="twocol" style="margin-top:10px"><button class="btn big" id="rplay">▶ Play / Pausa</button><button class="btn big" id="ropen">Apri teleprompter</button></div>
+  <button class="btn big" id="rclose" style="width:100%;margin-bottom:6px">Chiudi il teleprompter sull'iPad</button>
+  <div class="sl"><span>Posizione nel testo</span><b id="rposv">0%</b></div><input id="rpos" type="range" min="0" max="1000" value="0">
+  <div class="twocol"><button class="btn big" id="rrew">−10 s</button><button class="btn big" id="rfwd">+10 s</button><button class="btn big" id="rstart">Dall'inizio</button><button class="btn big" id="rmirror">⇋ Specchia</button></div>
+  <div class="sl"><span>Velocità</span><b id="rwpmv">110 WPM</b></div>
+  <div class="twocol"><button class="btn big" id="rslow">− più lento</button><button class="btn big" id="rfast">+ più veloce</button></div>
+  <div class="twocol"><button class="btn big" id="rfm">A− testo</button><button class="btn big" id="rfp">A+ testo</button></div>
+  <div class="muted" style="margin-top:12px">Da tastiera: Spazio play/pausa, frecce ±5 s, + e − velocità, Home dall'inizio.</div>
+ </div>
+ <div class="rcol">
+  <section class="card" style="margin-top:14px"><h2>COPIONI SULL'iPAD <button class="btn" id="rnew">+ Nuovo</button></h2>
+   <div id="rlist" style="padding:6px 8px"><div class="muted" style="padding:10px">Aspetto l'elenco dall'iPad…</div></div>
+   <div class="foot"><button class="btn primary" id="rload">Carica documento (Word, PDF, TXT)</button><input hidden type="file" id="rfile" accept=".txt,.md,.rtf,.docx,.pdf,.html,.htm,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"></div>
+  </section>
+  <section class="card" style="margin-top:12px"><h2>TESTO</h2>
+   <textarea id="rtxt" placeholder="Qui compare il testo aperto sull'iPad. Puoi modificarlo, incollarne un altro o trascinare qui un documento." style="display:block;width:100%;min-height:200px;height:30vh;background:transparent;border:0;outline:0;padding:14px;font-size:16px;line-height:1.5;resize:vertical"></textarea>
+   <div class="foot"><button class="btn" id="rpaste">Incolla</button><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="rsend">Invia come nuovo copione</button><button class="btn primary" id="rrepl">Sostituisci il copione aperto</button></span></div>
+  </section>
+  <section class="card" style="margin-top:12px"><h2>IMPOSTAZIONI</h2>
+   <div class="settings">
+    <div class="field"><label>Velocità <b id="sv_wpm"></b></label><input id="s_wpm" type="range" min="20" max="250" step="1"></div>
+    <div class="field"><label>Dimensione testo <b id="sv_font"></b></label><input id="s_font" type="range" min="28" max="160"></div>
+    <div class="field"><label>Interlinea <b id="sv_line"></b></label><input id="s_line" type="range" min="1.1" max="2.2" step=".05"></div>
+    <div class="field"><label>Margini <b id="sv_margin"></b></label><input id="s_margin" type="range" min="2" max="25"></div>
+    <div class="field"><label>Specchiatura</label><select id="s_mirror"><option value="1">Sì (per vetro teleprompter)</option><option value="0">No</option></select></div>
+    <div class="field"><label>Allineamento</label><select id="s_align"><option value="center">Centrato</option><option value="left">Sinistra</option></select></div>
+    <div class="field"><label>Colore testo</label><select id="s_color"><option value="#ffffff">Bianco</option><option value="#ffe14d">Giallo</option><option value="#8ce0a0">Verde</option></select></div>
+    <div class="field"><label>Scorrimento a voce</label><select id="s_voice"><option value="0">Spento</option><option value="1">Acceso (microfono dell'iPad)</option></select></div>
+    <div class="field"><label>Lingua parlata</label><select id="s_vlang"><option value="it-IT">Italiano</option><option value="en-US">English</option><option value="es-ES">Español</option><option value="fr-FR">Français</option><option value="de-DE">Deutsch</option></select></div>
+   </div>
+  </section>
+ </div>
+ </div>
 </div>
 <div id="rview" hidden>
  <div id="rmir"><div id="rscroll"><div id="rtext"></div></div></div>
@@ -203,7 +232,8 @@ const fromB=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));
 const urlB=u=>toB(u).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 const urlFrom=t=>fromB(t.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-t.length%4)%4));
 let Rtv='',sending=false;
-const hello=()=>send({type:'cmd',action:'hello',tv:Rtv});
+let Rsv='';
+const hello=()=>send({type:'cmd',action:'hello',tv:Rtv,sv:Rsv});
 let mqs=[],room='',cryptoKey=null,keyRaw='',lastRx=0,tq=0;const seen=new Set();
 const myTopic=()=>'traipler-tp/'+room+(remoteMode?'/m':'/r');   // cosa ascolto
 const toTopic=()=>'traipler-tp/'+room+(remoteMode?'/r':'/m');   // dove scrivo
@@ -240,8 +270,8 @@ function connectLink(){
   c.on('message',async(tp,buf)=>{let m;try{m=await dec(buf.toString())}catch{return}
    if(m._i){if(seen.has(m._i))return;seen.add(m._i);if(seen.size>300)seen.delete(seen.values().next().value)}
    lastRx=Date.now();
-   if(remoteMode){if(m.type==='state')remoteState(m);else if(m.type==='text')remoteText(m)}
-   else if(m&&m.type==='cmd'){setStatus('● Telefono collegato');if(m.action==='hello'){if(m.tv!==curTv())sendText();broadcast()}else command(m)}});
+   if(remoteMode){if(m.type==='state')remoteState(m);else if(m.type==='text')remoteText(m);else if(m.type==='meta')remoteMeta(m)}
+   else if(m&&m.type==='cmd'){setStatus('● Telefono collegato');if(m.action==='hello'){if(m.tv!==curTv())sendText();if(m.sv!==metaObj().sv)sendMeta();broadcast()}else command(m)}});
   c.on('error',()=>{});
  });
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){mqs.forEach(c=>{if(!c.connected)try{c.reconnect()}catch{}});if(remoteMode)hello()}});
@@ -255,7 +285,27 @@ async function sendText(){ // a pezzi piccoli: i servizi pubblici scollegano chi
   for(let k=0;k<n;k++){await send({type:'text',tv,i:k,n,part:text.slice(k*N,(k+1)*N),font:S.font,line:S.line,align:S.align,color:S.color,margin:S.margin});await new Promise(r=>setTimeout(r,60))}
  }finally{sending=false}
 }
-function queueText(){clearTimeout(tq);tq=setTimeout(()=>{if(!remoteMode&&isUp())sendText()},400)}
+let lastTv='';
+const metaObj=()=>{const o={type:'meta',cur,items:scripts.slice(0,80).map((x,i)=>({i,t:title(x,i),w:(x.text||'').trim()?(x.text||'').trim().split(/\s+/).length:0})),S:{wpm:S.wpm,font:S.font,line:S.line,margin:S.margin,mirror:S.mirror,align:S.align,color:S.color,voice:S.voice,vlang:S.vlang}};o.sv=hashT(JSON.stringify(o));return o};
+const sendMeta=()=>send(metaObj());
+function queueText(){clearTimeout(tq);tq=setTimeout(()=>{if(remoteMode||!isUp())return;const tv=curTv();if(tv!==lastTv){lastTv=tv;sendText()}sendMeta()},400)}
+
+function normalize(t){return String(t).replace(/\r\n?/g,'\n').replace(/[\u00a0\u2007\u202f]/g,' ').replace(/[\u200b\ufeff]/g,'').replace(/[ \t]+\n/g,'\n').replace(/\n[ \t]+/g,'\n').replace(/\n{3,}/g,'\n\n').trim()}
+const loadJS=src=>new Promise((ok,ko)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>ko(new Error('Serve Internet per leggere questo tipo di file'));document.head.appendChild(s)});
+const ent=t=>t.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,'&');
+function docxText(x){return ent(x.replace(/<w:tab\/>/g,' ').replace(/<w:br[^>]*\/>/g,'\n').replace(/<\/w:p>/g,'\n').replace(/<[^>]+>/g,''))}
+async function readFile(f){
+ const n=f.name.toLowerCase();
+ if(n.endsWith('.docx')){await loadJS('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');const z=await JSZip.loadAsync(await f.arrayBuffer());const d=z.file('word/document.xml');if(!d)throw new Error('File Word non leggibile');return docxText(await d.async('string'))}
+ if(n.endsWith('.pdf')){const V='3.11.174';await loadJS('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/'+V+'/pdf.min.js');if(!window._pdfW){const w=await (await fetch('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/'+V+'/pdf.worker.min.js')).text();window._pdfW=URL.createObjectURL(new Blob([w],{type:'text/javascript'}))}pdfjsLib.GlobalWorkerOptions.workerSrc=window._pdfW;
+  const pdf=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;let out='';
+  for(let p=1;p<=pdf.numPages;p++){const c=await(await pdf.getPage(p)).getTextContent();let y=null,ex=0;for(const it of c.items){if(y!==null&&Math.abs(it.transform[5]-y)>2)out+='\n';else if(y!==null&&it.transform[4]-ex>(it.height||10)*.15&&!out.endsWith(' ')&&!it.str.startsWith(' '))out+=' ';out+=it.str;y=it.transform[5];ex=it.transform[4]+it.width}out+='\n\n'}
+  return out}
+ const t=await f.text();
+ if(n.endsWith('.rtf'))return t.replace(/\\par[d]?/g,'\n').replace(/\{\\\*[^}]*\}/g,'').replace(/\\'([0-9a-f]{2})/gi,(m,h)=>String.fromCharCode(parseInt(h,16))).replace(/\\[a-z]+-?\d* ?/gi,'').replace(/[{}]/g,'');
+ if(n.endsWith('.html')||n.endsWith('.htm'))return new DOMParser().parseFromString(t,'text/html').body.innerText||'';
+ return t}
+$('backup').onclick=()=>{const b=new Blob([JSON.stringify({tipo:'traipler-copioni',scripts},null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='copioni-traipler-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();toast(scripts.length+' copioni salvati nel file')};
 
 /* ---------- telecomando iPhone ---------- */
 if(remoteMode){
@@ -270,7 +320,7 @@ if(remoteMode){
  function rLayout(){const h=innerHeight,f=Math.max(22,Math.round(R.font*innerWidth/744*.95));const t=$('rtext');t.style.fontSize=f+'px';t.style.lineHeight=R.line;t.style.textAlign=R.align;t.style.color=R.color;$('rscroll').style.padding=Math.round(h*.3)+'px '+R.margin+'% '+Math.round(h*.7)+'px';$('rmir').style.transform=vMirror?'scaleX(-1)':'';$('rempty').hidden=!!R.text;rDraw()}
  const parts={};window.remoteText=m=>{if(m.tv===Rtv)return;(parts[m.tv]=parts[m.tv]||{n:m.n,p:{}}).p[m.i]=m.part;const q=parts[m.tv];if(Object.keys(q.p).length<q.n)return;
   R.text=Array.from({length:q.n},(_,k)=>q.p[k]).join('');Rtv=m.tv;for(const k in parts)delete parts[k];
-  R.font=m.font||64;R.line=m.line||1.5;R.align=m.align||'center';R.color=m.color||'#ffffff';R.margin=m.margin||7;$('rtext').textContent=R.text;rwords=Math.max(1,R.text.trim()?R.text.trim().split(/\s+/).length:1);rLayout()};
+  R.font=m.font||64;R.line=m.line||1.5;R.align=m.align||'center';R.color=m.color||'#ffffff';R.margin=m.margin||7;$('rtext').textContent=R.text;rwords=Math.max(1,R.text.trim()?R.text.trim().split(/\s+/).length:1);if(!$('rtxt').dataset.dirty)$('rtxt').value=R.text;rLayout()};
  window.remoteState=m=>{rrun=!!m.running;rvoice=!!m.voice;rwpm=m.wpm;$('rplay').textContent=rrun?'Ⅱ Pausa':'▶ Play';$('rvplay').textContent=rrun?'Ⅱ':'▶';$('rwpmv').textContent=m.wpm+' WPM';$('rvwpm').textContent=m.wpm+' WPM';$('rtime').textContent=m.time;if(!dragging){$('rpos').value=Math.round(m.pos*1000);$('rposv').textContent=Math.round(m.pos*100)+'%'}if(!pdrag){const d=m.pos-rpos;rpos=Math.abs(d)>.01?m.pos:rpos+d*.35;if(rshow)rDraw()}setStatus((m.open?(rrun?'● In riproduzione':'● In pausa'):'● Collegato · teleprompter chiuso')+' · '+m.time)};
  function rLoop(t){if(!rshow)return;if(!rlast)rlast=t;const dt=Math.min(.1,(t-rlast)/1000);rlast=t;if(rrun&&!rvoice&&!pdrag){rpos=Math.min(1,rpos+dt*(rwpm/60)/rwords)}rDraw();requestAnimationFrame(rLoop)}
  $('rshow').onclick=()=>{rshow=true;$('rview').hidden=false;rlast=0;rLayout();hello();requestAnimationFrame(rLoop)};
@@ -291,7 +341,24 @@ if(remoteMode){
  const rend=()=>{if(!pdrag)return;const d=pdrag;pdrag=null;if(d.moved)send({type:'cmd',action:'pos',value:rpos});else send({type:'cmd',action:'toggle'})};
  rv.addEventListener('pointerup',rend);rv.addEventListener('pointercancel',rend);
 
- $('rpaste').onclick=async()=>{try{$('rtxt').value=await navigator.clipboard.readText()}catch{$('rtxt').focus();toast('Tieni premuto nel riquadro e scegli Incolla')}};
+ $('rclose').onclick=c('close');$('rnew').onclick=c('newscript');
+ window.remoteMeta=m=>{Rsv=m.sv;
+  $('rlist').innerHTML='';m.items.forEach(it=>{const d=document.createElement('div');d.className='rrow'+(it.i===m.cur?' on':'');
+   d.innerHTML='<span class="tt"></span><button class="btn danger">Elimina</button>';const t=d.querySelector('.tt');t.textContent=it.t;const sm=document.createElement('small');sm.textContent=it.w+' parole';t.appendChild(sm);
+   t.onclick=()=>{$('rtxt').dataset.dirty='';send({type:'cmd',action:'select',value:it.i})};
+   d.querySelector('button').onclick=()=>{if(confirm('Eliminare «'+it.t+'» dall\'iPad?'))send({type:'cmd',action:'delscript',value:it.i})};$('rlist').appendChild(d)});
+  const S2=m.S,set=(id,v,lab)=>{const e=$('s_'+id);if(document.activeElement!==e)e.value=v;if(lab)$('sv_'+id).textContent=lab};
+  set('wpm',S2.wpm,S2.wpm+' WPM');set('font',S2.font,S2.font+' px');set('line',S2.line,S2.line);set('margin',S2.margin,S2.margin+'%');set('mirror',S2.mirror);set('align',S2.align);set('color',S2.color);set('voice',S2.voice);set('vlang',S2.vlang)};
+ ['wpm','font','line','margin','mirror','align','color','voice','vlang'].forEach(k=>{const e=$('s_'+k);e.addEventListener('input',()=>{const v=e.value;if($('sv_'+k))$('sv_'+k).textContent=v+(k==='wpm'?' WPM':k==='font'?' px':k==='margin'?'%':'');clearTimeout(e._t);e._t=setTimeout(()=>send({type:'cmd',action:'set',value:{[k]:v}}),120)})});
+ $('rtxt').addEventListener('input',()=>{$('rtxt').dataset.dirty='1'});
+ $('rrepl').onclick=()=>{const t=$('rtxt').value.trim();if(!t)return toast('Il testo è vuoto');if(!isUp())return toast('Non collegato');send({type:'cmd',action:'settext',value:{text:t.slice(0,200000)}});$('rtxt').dataset.dirty='';toast('Testo sostituito sull\'iPad')};
+ async function rImport(f){if(/\.(pages|doc|key|odt)$/i.test(f.name))return toast('Salva il documento come Word (.docx) o PDF e riprova');toast('Leggo il documento…');
+  try{const t=normalize(await Promise.race([readFile(f),new Promise((_,ko)=>setTimeout(()=>ko(new Error('Non riesco a leggere il file')),30000))]));if(!t)return toast('Nessun testo trovato');$('rtxt').value=t;$('rtxt').dataset.dirty='1';
+   if(!isUp())return toast('Non collegato');send({type:'cmd',action:'script',value:{text:t.slice(0,200000),name:f.name.replace(/\.[^.]+$/,'')}});toast('Caricato sull\'iPad: '+t.split(/\s+/).length+' parole')}catch(e){toast(e.message||'Non riesco a leggere il file')}}
+ $('rload').onclick=()=>$('rfile').click();$('rfile').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)rImport(f)};
+ ['dragover','dragenter'].forEach(ev=>document.addEventListener(ev,e=>e.preventDefault()));
+ document.addEventListener('drop',e=>{e.preventDefault();const f=e.dataTransfer&&e.dataTransfer.files[0];if(f)rImport(f);else{const t=e.dataTransfer&&e.dataTransfer.getData('text');if(t){$('rtxt').value=t;$('rtxt').dataset.dirty='1'}}});
+ $('rpaste').onclick=async()=>{try{$('rtxt').value=await navigator.clipboard.readText();$('rtxt').dataset.dirty='1'}catch{$('rtxt').focus();toast('Tieni premuto nel riquadro e scegli Incolla')}};
  $('rsend').onclick=()=>{const t=$('rtxt').value.trim();if(!t)return toast('Scrivi o incolla prima il testo');if(!isUp())return toast('Non collegato');send({type:'cmd',action:'script',value:{text:t.slice(0,300000),name:'Dal telefono'}});$('rtxt').value='';toast('Inviato all\'iPad')};
  try{navigator.wakeLock&&navigator.wakeLock.request('screen')}catch{}
  setupLink();return;
@@ -307,26 +374,10 @@ function stats(){const w=words();$('stats').textContent=w+' parole · circa '+Ma
 script.oninput=()=>{scripts[cur].text=script.value;stats();saveS();queueText();clearTimeout(script._t);script._t=setTimeout(renderTabs,400)};
 $('newScript').onclick=()=>{scripts.push({id:Date.now(),text:''});cur=scripts.length-1;loadScript();saveS();script.focus()};
 $('del').onclick=()=>{if(!confirm('Eliminare questo copione?'))return;scripts.splice(cur,1);if(!scripts.length)scripts=[{id:Date.now(),text:''}];cur=Math.max(0,Math.min(cur,scripts.length-1));loadScript();saveS()};
-function normalize(t){return String(t).replace(/\r\n?/g,'\n').replace(/[\u00a0\u2007\u202f]/g,' ').replace(/[\u200b\ufeff]/g,'').replace(/[ \t]+\n/g,'\n').replace(/\n[ \t]+/g,'\n').replace(/\n{3,}/g,'\n\n').trim()}
 // se il copione aperto e' vuoto lo riempie, altrimenti ne crea uno nuovo
 function addText(text,name){text=normalize(text);if(!text){toast('Nessun testo trovato');return}
  if(!script.value.trim()){scripts[cur].text=text;scripts[cur].name=name||scripts[cur].name}else{scripts.push({id:Date.now(),text,name});cur=scripts.length-1}
  loadScript();saveS();toast('Copione caricato · '+words()+' parole')}
-const loadJS=src=>new Promise((ok,ko)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>ko(new Error('Serve Internet per leggere questo tipo di file'));document.head.appendChild(s)});
-const ent=t=>t.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,'&');
-function docxText(x){return ent(x.replace(/<w:tab\/>/g,' ').replace(/<w:br[^>]*\/>/g,'\n').replace(/<\/w:p>/g,'\n').replace(/<[^>]+>/g,''))}
-async function readFile(f){
- const n=f.name.toLowerCase();
- if(n.endsWith('.docx')){await loadJS('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');const z=await JSZip.loadAsync(await f.arrayBuffer());const d=z.file('word/document.xml');if(!d)throw new Error('File Word non leggibile');return docxText(await d.async('string'))}
- if(n.endsWith('.pdf')){const V='3.11.174';await loadJS('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/'+V+'/pdf.min.js');if(!window._pdfW){const w=await (await fetch('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/'+V+'/pdf.worker.min.js')).text();window._pdfW=URL.createObjectURL(new Blob([w],{type:'text/javascript'}))}pdfjsLib.GlobalWorkerOptions.workerSrc=window._pdfW;
-  const pdf=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;let out='';
-  for(let p=1;p<=pdf.numPages;p++){const c=await(await pdf.getPage(p)).getTextContent();let y=null,ex=0;for(const it of c.items){if(y!==null&&Math.abs(it.transform[5]-y)>2)out+='\n';else if(y!==null&&it.transform[4]-ex>(it.height||10)*.15&&!out.endsWith(' ')&&!it.str.startsWith(' '))out+=' ';out+=it.str;y=it.transform[5];ex=it.transform[4]+it.width}out+='\n\n'}
-  return out}
- const t=await f.text();
- if(n.endsWith('.rtf'))return t.replace(/\\par[d]?/g,'\n').replace(/\{\\\*[^}]*\}/g,'').replace(/\\'([0-9a-f]{2})/gi,(m,h)=>String.fromCharCode(parseInt(h,16))).replace(/\\[a-z]+-?\d* ?/gi,'').replace(/[{}]/g,'');
- if(n.endsWith('.html')||n.endsWith('.htm'))return new DOMParser().parseFromString(t,'text/html').body.innerText||'';
- return t}
-$('backup').onclick=()=>{const b=new Blob([JSON.stringify({tipo:'traipler-copioni',scripts},null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='copioni-traipler-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();toast(scripts.length+' copioni salvati nel file')};
 async function importFile(f){
  if(/\.json$/i.test(f.name)){try{const j=JSON.parse(await f.text());if(j.tipo!=='traipler-copioni'||!Array.isArray(j.scripts))throw 0;let n=0;j.scripts.forEach(x=>{if(x&&x.text&&!scripts.some(y=>y.text===x.text)){scripts.push({id:Date.now()+n,text:x.text,name:x.name||''});n++}});cur=scripts.length-1;loadScript();saveS();toast(n+' copioni ripristinati')}catch{toast('File di copia non valido')}return}
  if(/\.(pages|doc|key|odt)$/i.test(f.name)){toast('Salva il documento come Word (.docx) o PDF e riprova');return}
@@ -507,6 +558,13 @@ function command(m){
  else if(a==='fontd'){setFont(S.font+v)}
  else if(a==='pos'){offset=v*maxOff();draw();if(S.voice==='1')syncPtr();broadcast()}
  else if(a==='script'){addText(v.text,v.name||'Dal telefono')}
+ else if(a==='settext'){scripts[cur].text=normalize(v.text||'');loadScript();saveS();toast('Testo aggiornato dal PC')}
+ else if(a==='select'){if(scripts[v]){cur=v;loadScript();saveS()}}
+ else if(a==='newscript'){scripts.push({id:Date.now(),text:''});cur=scripts.length-1;loadScript();saveS()}
+ else if(a==='delscript'){if(scripts[v]){scripts.splice(v,1);if(!scripts.length)scripts=[{id:Date.now(),text:''}];cur=Math.max(0,Math.min(cur>v?cur-1:cur,scripts.length-1));if(open)closePrompt();loadScript();saveS()}}
+ else if(a==='close'){if(open)closePrompt()}
+ else if(a==='set'){for(const k in v){if(['wpm','font','line','margin'].includes(k)){S[k]=+v[k]}else if(['mirror','align','color','voice','vlang'].includes(k)){S[k]=String(v[k])}}
+  S.wpm=Math.max(20,Math.min(250,S.wpm));S.font=Math.max(28,Math.min(160,S.font));syncSettings();applyStyle();stats();saveS();broadcast()}
 }
 let bt=0;function broadcast(){const now=Date.now();if(now-bt<120&&running)return;bt=now;send({type:'state',voice:S.voice==='1',running,open,wpm:S.wpm,pos:open?offset/maxOff():0,time:$('time').textContent})}
 setInterval(()=>{if(isUp())broadcast()},1000);
