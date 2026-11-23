@@ -173,7 +173,8 @@ select{width:100%;background:#0b100c;border:1px solid var(--line);border-radius:
 </div>
 
 <div id="remote" hidden>
- <h1>Telecomando Traipler <small style="font-size:12px;color:var(--muted)">v16 · PC fedele all'iPad</small></h1><div class="muted" id="rstatus">Connessione all'iPad…</div>
+ <div id="rbuild" style="position:fixed;left:14px;bottom:8px;font-size:12px;color:#ffb347;z-index:70"></div>
+ <h1>Telecomando Traipler <small style="font-size:12px;color:var(--muted)">v19 · PC fedele all'iPad</small></h1><div class="muted" id="rstatus">Connessione all'iPad…</div>
  <div class="rgrid">
  <div class="rcol">
   <button class="btn primary big" id="rshow" style="margin-top:14px">Vedi il testo che scorre</button>
@@ -222,6 +223,11 @@ select{width:100%;background:#0b100c;border:1px solid var(--line);border-radius:
 <div class="toast" id="toast"></div>
 <script src="https://unpkg.com/mqtt@5.3.4/dist/mqtt.min.js"></script>
 <script>
+const BUILD='v19';
+/* aggiornamento automatico: se online c'e' una versione piu' nuova, ricarica da solo (la chiave del telecomando nell'indirizzo resta) */
+(async()=>{try{const t=await (await fetch('./index.html?c='+Date.now(),{cache:'no-store'})).text();const m=t.match(/const BUILD='(v\d+)'/);
+ if(m&&m[1]!==BUILD){const k='tp_reload_'+m[1];if(!sessionStorage.getItem(k)){sessionStorage.setItem(k,'1');location.replace(location.pathname+'?u='+m[1]+location.hash)}}}catch(e){}})();
+
 (()=>{
 const $=id=>document.getElementById(id),remoteMode=new URLSearchParams(location.search).has('remote');
 const GUIDE=.30; // il testo si legge sulla riga a 30% dall'alto
@@ -337,7 +343,7 @@ if(remoteMode){
  const parts={};window.remoteText=m=>{if(m.tv===Rtv)return;(parts[m.tv]=parts[m.tv]||{n:m.n,p:{}}).p[m.i]=m.part;const q=parts[m.tv];if(Object.keys(q.p).length<q.n)return;
   R.text=Array.from({length:q.n},(_,k)=>q.p[k]).join('');Rtv=m.tv;for(const k in parts)delete parts[k];
   R.font=m.font||64;R.line=m.line||1.5;R.align=m.align||'center';R.color=m.color||'#ffffff';R.margin=m.margin||7;$('rtext').textContent=R.text;rwords=Math.max(1,R.text.trim()?R.text.trim().split(/\s+/).length:1);if(!$('rtxt').dataset.dirty)$('rtxt').value=R.text;rLayout()};
- window.remoteState=m=>{if(m.vw&&m.vh&&(Math.abs(m.vw-rvw)>1||Math.abs(m.vh-rvh)>1)){rvw=m.vw;rvh=m.vh;if(rshow)rLayout()}rrun=!!m.running;rvoice=!!m.voice;rwpm=m.wpm;$('rplay').textContent=rrun?'Ⅱ Pausa':'▶ Play';$('rvplay').textContent=rrun?'Ⅱ':'▶';$('rwpmv').textContent=m.wpm+' WPM';$('rvwpm').textContent=m.wpm+' WPM';$('rtime').textContent=m.time;if(!dragging){$('rpos').value=Math.round(m.pos*1000);$('rposv').textContent=Math.round(m.pos*100)+'%'}if(!pdrag){const d=m.pos-rpos;if(Date.now()>wLock)rpos=Math.abs(d)>.01?m.pos:rpos+d*.35;if(rshow)rDraw()}setStatus((m.open?(rrun?'● In riproduzione':'● In pausa'):'● Collegato · teleprompter chiuso')+' · '+m.time)};
+ window.remoteState=m=>{$('rempty').innerHTML=R.text?'':"Aspetto il testo dall'iPad…<br>Apri il copione sull'iPad.";if(!m.vw){$('rstatus').dataset.old='1'}else delete $('rstatus').dataset.old;$('rbuild').textContent=m.b?('iPad '+m.b+' · vista '+m.vw+'×'+m.vh):"iPad con app VECCHIA: chiudi e riapri l'app sull'iPad (anche due volte) per avere la stessa vista";if(m.vw&&m.vh&&(Math.abs(m.vw-rvw)>1||Math.abs(m.vh-rvh)>1)){rvw=m.vw;rvh=m.vh;if(rshow)rLayout()}rrun=!!m.running;rvoice=!!m.voice;rwpm=m.wpm;$('rplay').textContent=rrun?'Ⅱ Pausa':'▶ Play';$('rvplay').textContent=rrun?'Ⅱ':'▶';$('rwpmv').textContent=m.wpm+' WPM';$('rvwpm').textContent=m.wpm+' WPM';$('rtime').textContent=m.time;if(!dragging){$('rpos').value=Math.round(m.pos*1000);$('rposv').textContent=Math.round(m.pos*100)+'%'}if(!pdrag){const d=m.pos-rpos;if(Date.now()>wLock)rpos=Math.abs(d)>.01?m.pos:rpos+d*.35;if(rshow)rDraw()}setStatus((m.open?(rrun?'● In riproduzione':'● In pausa'):'● Collegato · teleprompter chiuso')+' · '+m.time)};
  function rLoop(t){if(!rshow)return;if(!rlast)rlast=t;const dt=Math.min(.1,(t-rlast)/1000);rlast=t;if(rrun&&!rvoice&&!pdrag&&Date.now()>wLock){rpos=Math.min(1,rpos+dt*(rwpm/60)/rwords)}rDraw();requestAnimationFrame(rLoop)}
  const openView=()=>{rshow=true;$('rview').hidden=false;rlast=0;rLayout();hello();requestAnimationFrame(rLoop)};
  $('rshow').onclick=openView;if(matchMedia('(min-width:1000px)').matches)setTimeout(openView,0);
@@ -587,7 +593,7 @@ function command(m){
  else if(a==='set'){for(const k in v){if(['wpm','font','line','margin'].includes(k)){S[k]=+v[k]}else if(['mirror','align','color','voice','vlang'].includes(k)){S[k]=String(v[k])}}
   S.wpm=Math.max(20,Math.min(250,S.wpm));S.font=Math.max(28,Math.min(160,S.font));syncSettings();applyStyle();stats();saveS();broadcast()}
 }
-let bt=0;function broadcast(){const now=Date.now();if(now-bt<120&&running)return;bt=now;send({type:'state',vw:(open&&pview.clientWidth)||innerWidth,vh:(open&&pview.clientHeight)||innerHeight,voice:S.voice==='1',running,open,wpm:S.wpm,pos:open?offset/maxOff():0,time:$('time').textContent})}
+let bt=0;function broadcast(){const now=Date.now();if(now-bt<120&&running)return;bt=now;send({type:'state',b:BUILD,vw:(open&&pview.clientWidth)||innerWidth,vh:(open&&pview.clientHeight)||innerHeight,voice:S.voice==='1',running,open,wpm:S.wpm,pos:open?offset/maxOff():0,time:$('time').textContent})}
 setInterval(()=>{if(isUp())broadcast()},1000);
 
 syncSettings();loadScript();setupLink();
