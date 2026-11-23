@@ -326,9 +326,9 @@ if(remoteMode){
  const rH=()=>Math.max(1,$('rtext').offsetHeight);
  const rDraw=()=>{$('rscroll').style.transform='translateY('+(-rpos*rH())+'px)'};
  let rk=1,rvw=744,rvh=1133;
- function rLayout(){const rvE=$('rview'),desk=matchMedia('(min-width:1000px)').matches,availW=desk?384:innerWidth,availH=desk?innerHeight-32:innerHeight;
+ function rLayout(){const rvE=$('rview'),desk=matchMedia('(min-width:1000px)').matches,availW=desk?Math.min(Math.round(innerWidth*.42),680):innerWidth,availH=desk?innerHeight-32:innerHeight;
   rk=Math.min(availW/rvw,availH/rvh);const pw=Math.round(rvw*rk),ph=Math.round(rvh*rk);
-  if(desk){rvE.style.width=pw+'px';rvE.style.height=ph+'px'}else{rvE.style.width='';rvE.style.height=''}
+  if(desk){rvE.style.width=pw+'px';rvE.style.height=ph+'px';$('remote').style.setProperty('padding-right',(pw+56)+'px','important')}else{rvE.style.width='';rvE.style.height='';$('remote').style.removeProperty('padding-right')}
   const m=$('rmir');m.style.cssText='position:absolute;left:0;top:0;overflow:hidden;width:'+rvw+'px;height:'+rvh+'px;transform-origin:0 0;transform:'+(vMirror?'translateX('+(desk?pw:innerWidth-(innerWidth-pw)/2)+'px) scale('+(-rk)+','+rk+')':'translateX('+(desk?0:(innerWidth-pw)/2)+'px) scale('+rk+')');
   if(!desk)m.style.top=Math.round((innerHeight-ph)/2)+'px';
   const t=$('rtext');t.style.fontSize=R.font+'px';t.style.lineHeight=R.line;t.style.textAlign=R.align;t.style.color=R.color;$('rscroll').style.padding=Math.round(rvh*.3)+'px '+R.margin+'% '+Math.round(rvh*.7)+'px';$('rempty').hidden=!!R.text;rDraw()}
