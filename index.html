@@ -93,6 +93,14 @@ select{width:100%;background:#0b100c;border:1px solid var(--line);border-radius:
 .rgrid{display:block}
 @media(min-width:900px){#remote{max-width:1100px!important}.rgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:22px}}
 .rrow{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px}.rrow.on{background:var(--panel2);outline:1px solid var(--green)}.rrow .tt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;cursor:pointer}.rrow .tt small{color:var(--muted);margin-left:8px}.rrow button{min-height:36px;padding:6px 10px;font-size:12px}
+@media(min-width:1000px){
+ #remote{max-width:none!important;padding-right:430px!important}
+ #rview{left:auto!important;bottom:auto!important;right:24px!important;top:16px!important;width:384px;height:min(calc(100vh - 32px),590px);border:1px solid #1d3a32;border-radius:20px;z-index:20}
+ #rbackc,#rshow{display:none!important}
+ #rview .ui{display:none!important}
+ #rview{height:auto}
+ .rview-tag{position:fixed;right:24px;top:0;font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;z-index:21;padding:0}
+}
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#d4f7dc;color:#102516;padding:11px 15px;border-radius:12px;font-size:13px;font-weight:700;opacity:0;transition:.2s;pointer-events:none;z-index:99}.toast.show{opacity:1}
 </style>
 </head>
@@ -164,7 +172,7 @@ select{width:100%;background:#0b100c;border:1px solid var(--line);border-radius:
 </div>
 
 <div id="remote" hidden>
- <h1>Telecomando Traipler <small style="font-size:12px;color:var(--muted)">v15 · PC completo</small></h1><div class="muted" id="rstatus">Connessione all'iPad…</div>
+ <h1>Telecomando Traipler <small style="font-size:12px;color:var(--muted)">v16 · PC fedele all'iPad</small></h1><div class="muted" id="rstatus">Connessione all'iPad…</div>
  <div class="rgrid">
  <div class="rcol">
   <button class="btn primary big" id="rshow" style="margin-top:14px">Vedi il testo che scorre</button>
@@ -317,13 +325,20 @@ if(remoteMode){
  let wLock=0,wT=0,wTm=0;const R={text:'',font:64,line:1.5,align:'center',color:'#ffffff',margin:7,mirror:'1'};let rpos=0,rvoice=false,rrun=false,rwpm=110,rshow=false,vMirror=false,pdrag=null,rwords=1,rlast=0;
  const rH=()=>Math.max(1,$('rtext').offsetHeight);
  const rDraw=()=>{$('rscroll').style.transform='translateY('+(-rpos*rH())+'px)'};
- function rLayout(){const h=innerHeight,f=Math.max(22,Math.round(R.font*innerWidth/744*.95));const t=$('rtext');t.style.fontSize=f+'px';t.style.lineHeight=R.line;t.style.textAlign=R.align;t.style.color=R.color;$('rscroll').style.padding=Math.round(h*.3)+'px '+R.margin+'% '+Math.round(h*.7)+'px';$('rmir').style.transform=vMirror?'scaleX(-1)':'';$('rempty').hidden=!!R.text;rDraw()}
+ let rk=1,rvw=744,rvh=1133;
+ function rLayout(){const rvE=$('rview'),desk=matchMedia('(min-width:1000px)').matches,availW=desk?384:innerWidth,availH=desk?innerHeight-32:innerHeight;
+  rk=Math.min(availW/rvw,availH/rvh);const pw=Math.round(rvw*rk),ph=Math.round(rvh*rk);
+  if(desk){rvE.style.width=pw+'px';rvE.style.height=ph+'px'}else{rvE.style.width='';rvE.style.height=''}
+  const m=$('rmir');m.style.cssText='position:absolute;left:0;top:0;overflow:hidden;width:'+rvw+'px;height:'+rvh+'px;transform-origin:0 0;transform:'+(vMirror?'translateX('+(desk?pw:innerWidth-(innerWidth-pw)/2)+'px) scale('+(-rk)+','+rk+')':'translateX('+(desk?0:(innerWidth-pw)/2)+'px) scale('+rk+')');
+  if(!desk)m.style.top=Math.round((innerHeight-ph)/2)+'px';
+  const t=$('rtext');t.style.fontSize=R.font+'px';t.style.lineHeight=R.line;t.style.textAlign=R.align;t.style.color=R.color;$('rscroll').style.padding=Math.round(rvh*.3)+'px '+R.margin+'% '+Math.round(rvh*.7)+'px';$('rempty').hidden=!!R.text;rDraw()}
  const parts={};window.remoteText=m=>{if(m.tv===Rtv)return;(parts[m.tv]=parts[m.tv]||{n:m.n,p:{}}).p[m.i]=m.part;const q=parts[m.tv];if(Object.keys(q.p).length<q.n)return;
   R.text=Array.from({length:q.n},(_,k)=>q.p[k]).join('');Rtv=m.tv;for(const k in parts)delete parts[k];
   R.font=m.font||64;R.line=m.line||1.5;R.align=m.align||'center';R.color=m.color||'#ffffff';R.margin=m.margin||7;$('rtext').textContent=R.text;rwords=Math.max(1,R.text.trim()?R.text.trim().split(/\s+/).length:1);if(!$('rtxt').dataset.dirty)$('rtxt').value=R.text;rLayout()};
- window.remoteState=m=>{rrun=!!m.running;rvoice=!!m.voice;rwpm=m.wpm;$('rplay').textContent=rrun?'Ⅱ Pausa':'▶ Play';$('rvplay').textContent=rrun?'Ⅱ':'▶';$('rwpmv').textContent=m.wpm+' WPM';$('rvwpm').textContent=m.wpm+' WPM';$('rtime').textContent=m.time;if(!dragging){$('rpos').value=Math.round(m.pos*1000);$('rposv').textContent=Math.round(m.pos*100)+'%'}if(!pdrag){const d=m.pos-rpos;if(Date.now()>wLock)rpos=Math.abs(d)>.01?m.pos:rpos+d*.35;if(rshow)rDraw()}setStatus((m.open?(rrun?'● In riproduzione':'● In pausa'):'● Collegato · teleprompter chiuso')+' · '+m.time)};
+ window.remoteState=m=>{if(m.vw&&m.vh&&(Math.abs(m.vw-rvw)>1||Math.abs(m.vh-rvh)>1)){rvw=m.vw;rvh=m.vh;if(rshow)rLayout()}rrun=!!m.running;rvoice=!!m.voice;rwpm=m.wpm;$('rplay').textContent=rrun?'Ⅱ Pausa':'▶ Play';$('rvplay').textContent=rrun?'Ⅱ':'▶';$('rwpmv').textContent=m.wpm+' WPM';$('rvwpm').textContent=m.wpm+' WPM';$('rtime').textContent=m.time;if(!dragging){$('rpos').value=Math.round(m.pos*1000);$('rposv').textContent=Math.round(m.pos*100)+'%'}if(!pdrag){const d=m.pos-rpos;if(Date.now()>wLock)rpos=Math.abs(d)>.01?m.pos:rpos+d*.35;if(rshow)rDraw()}setStatus((m.open?(rrun?'● In riproduzione':'● In pausa'):'● Collegato · teleprompter chiuso')+' · '+m.time)};
  function rLoop(t){if(!rshow)return;if(!rlast)rlast=t;const dt=Math.min(.1,(t-rlast)/1000);rlast=t;if(rrun&&!rvoice&&!pdrag&&Date.now()>wLock){rpos=Math.min(1,rpos+dt*(rwpm/60)/rwords)}rDraw();requestAnimationFrame(rLoop)}
- $('rshow').onclick=()=>{rshow=true;$('rview').hidden=false;rlast=0;rLayout();hello();requestAnimationFrame(rLoop)};
+ const openView=()=>{rshow=true;$('rview').hidden=false;rlast=0;rLayout();hello();requestAnimationFrame(rLoop)};
+ $('rshow').onclick=openView;if(matchMedia('(min-width:1000px)').matches)setTimeout(openView,0);
  $('rbackc').onclick=()=>{rshow=false;$('rview').hidden=true};
  $('rmir2').onclick=()=>{vMirror=!vMirror;rLayout()};
  $('rvtop').onclick=c('start');$('rvend').onclick=c('end');$('rvrew5').onclick=c('seek',-5);$('rvfwd5').onclick=c('seek',5);$('rvplay').onclick=c('toggle');$('rvrew').onclick=c('seek',-10);$('rvfwd').onclick=c('seek',10);$('rvslow').onclick=c('wpmd',-5);$('rvfast').onclick=c('wpmd',5);
@@ -338,8 +353,8 @@ if(remoteMode){
   else if(k==='End'){send({type:'cmd',action:'end'})}});
  const rv=$('rview');
  rv.addEventListener('pointerdown',e=>{if(e.target.closest('.ui'))return;rv.setPointerCapture(e.pointerId);pdrag={y:e.clientY,p:rpos,moved:false,t:0}});
- rv.addEventListener('pointermove',e=>{if(!pdrag)return;const dy=e.clientY-pdrag.y;if(Math.abs(dy)>8)pdrag.moved=true;if(pdrag.moved){rpos=Math.max(0,Math.min(1,pdrag.p-dy/rH()));rDraw();const n=Date.now();if(n-pdrag.t>70){pdrag.t=n;send({type:'cmd',action:'pos',value:rpos})}}});
- rv.addEventListener('wheel',e=>{if(e.target.closest('.ui'))return;e.preventDefault();wLock=Date.now()+700;let dy=e.deltaY;if(e.deltaMode===1)dy*=32;else if(e.deltaMode===2)dy*=innerHeight;rpos=Math.max(0,Math.min(1,rpos+dy/rH()));rDraw();const n=Date.now();if(n-wT>70){wT=n;send({type:'cmd',action:'pos',value:rpos})}clearTimeout(wTm);wTm=setTimeout(()=>send({type:'cmd',action:'pos',value:rpos}),120)},{passive:false});
+ rv.addEventListener('pointermove',e=>{if(!pdrag)return;const dy=e.clientY-pdrag.y;if(Math.abs(dy)>8)pdrag.moved=true;if(pdrag.moved){rpos=Math.max(0,Math.min(1,pdrag.p-dy/(rH()*rk)));rDraw();const n=Date.now();if(n-pdrag.t>70){pdrag.t=n;send({type:'cmd',action:'pos',value:rpos})}}});
+ rv.addEventListener('wheel',e=>{if(e.target.closest('.ui'))return;e.preventDefault();wLock=Date.now()+700;let dy=e.deltaY;if(e.deltaMode===1)dy*=32;else if(e.deltaMode===2)dy*=innerHeight;rpos=Math.max(0,Math.min(1,rpos+dy/(rH()*rk)));rDraw();const n=Date.now();if(n-wT>70){wT=n;send({type:'cmd',action:'pos',value:rpos})}clearTimeout(wTm);wTm=setTimeout(()=>send({type:'cmd',action:'pos',value:rpos}),120)},{passive:false});
  const rend=()=>{if(!pdrag)return;const d=pdrag;pdrag=null;if(d.moved)send({type:'cmd',action:'pos',value:rpos});else send({type:'cmd',action:'toggle'})};
  rv.addEventListener('pointerup',rend);rv.addEventListener('pointercancel',rend);
 
@@ -570,7 +585,7 @@ function command(m){
  else if(a==='set'){for(const k in v){if(['wpm','font','line','margin'].includes(k)){S[k]=+v[k]}else if(['mirror','align','color','voice','vlang'].includes(k)){S[k]=String(v[k])}}
   S.wpm=Math.max(20,Math.min(250,S.wpm));S.font=Math.max(28,Math.min(160,S.font));syncSettings();applyStyle();stats();saveS();broadcast()}
 }
-let bt=0;function broadcast(){const now=Date.now();if(now-bt<120&&running)return;bt=now;send({type:'state',voice:S.voice==='1',running,open,wpm:S.wpm,pos:open?offset/maxOff():0,time:$('time').textContent})}
+let bt=0;function broadcast(){const now=Date.now();if(now-bt<120&&running)return;bt=now;send({type:'state',vw:(open&&pview.clientWidth)||innerWidth,vh:(open&&pview.clientHeight)||innerHeight,voice:S.voice==='1',running,open,wpm:S.wpm,pos:open?offset/maxOff():0,time:$('time').textContent})}
 setInterval(()=>{if(isUp())broadcast()},1000);
 
 syncSettings();loadScript();setupLink();
