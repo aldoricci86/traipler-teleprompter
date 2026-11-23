@@ -85,7 +85,8 @@ select{width:100%;background:#0b100c;border:1px solid var(--line);border-radius:
 #rguide:before,#rguide:after{content:"";position:absolute;top:-9px;border:9px solid transparent}
 #rguide:before{left:0;border-left-color:#ff4d4d;border-left-width:14px}
 #rguide:after{right:0;border-right-color:#ff4d4d;border-right-width:14px}
-#rguide i{position:absolute;left:20px;right:20px;top:-1px;height:2px;background:#ff4d4d55}
+#rguide i{position:absolute;left:14px;right:14px;top:-1px;height:3px;background:#ff4d4d;box-shadow:0 0 8px #ff4d4d88}
+#rdim{position:absolute;left:0;right:0;top:0;height:30%;background:rgba(0,0,0,.72);pointer-events:none;z-index:1}
 #rtop{top:0;padding-top:max(12px,env(safe-area-inset-top))}
 #rbot{bottom:0;background:linear-gradient(#0000,#000e);padding-bottom:max(14px,env(safe-area-inset-bottom))}
 #rview .ui{flex-wrap:nowrap;gap:6px;justify-content:space-between}#rview .ui .row{flex-wrap:nowrap;gap:6px}#rview .btn,#rview .badge{white-space:nowrap}#rview .btn{min-width:0;padding:10px 12px;min-height:46px;font-size:14px}#rview .badge{min-width:0;font-size:13px}
@@ -213,6 +214,7 @@ select{width:100%;background:#0b100c;border:1px solid var(--line);border-radius:
 <div id="rview" hidden>
  <div id="rmir"><div id="rscroll"><div id="rtext"></div></div></div>
  <div id="rempty">Aspetto il testo dall'iPad…<br>Apri il copione sull'iPad.</div>
+ <div id="rdim"></div>
  <div id="rguide"><i></i></div>
  <div class="ui" id="rtop"><button class="btn" id="rbackc">← Comandi</button><span class="badge" id="rtime">00:00</span><button class="btn" id="rmir2">⇋</button></div>
  <div class="ui" id="rbot"><div class="row"><button class="btn" id="rvtop">⇈</button><button class="btn" id="rvrew5">−5</button><button class="btn" id="rvrew">−10</button><button class="btn primary" id="rvplay" style="min-width:84px;font-size:22px">▶</button><button class="btn" id="rvfwd">+10</button><button class="btn" id="rvfwd5">+5</button><button class="btn" id="rvend">⇊</button><button class="btn" id="rvslow">−</button><span class="badge" id="rvwpm">110 WPM</span><button class="btn" id="rvfast">+</button></div></div>
@@ -330,7 +332,7 @@ if(remoteMode){
   rk=Math.min(availW/rvw,availH/rvh);const pw=Math.round(rvw*rk),ph=Math.round(rvh*rk);
   if(desk){rvE.style.width=pw+'px';rvE.style.height=ph+'px';$('remote').style.setProperty('padding-right',(pw+56)+'px','important')}else{rvE.style.width='';rvE.style.height='';$('remote').style.removeProperty('padding-right')}
   const m=$('rmir');m.style.cssText='position:absolute;left:0;top:0;overflow:hidden;width:'+rvw+'px;height:'+rvh+'px;transform-origin:0 0;transform:'+(vMirror?'translateX('+(desk?pw:innerWidth-(innerWidth-pw)/2)+'px) scale('+(-rk)+','+rk+')':'translateX('+(desk?0:(innerWidth-pw)/2)+'px) scale('+rk+')');
-  if(!desk)m.style.top=Math.round((innerHeight-ph)/2)+'px';
+  const oy=desk?0:Math.round((innerHeight-ph)/2);if(!desk)m.style.top=oy+'px';$('rguide').style.top=Math.round(oy+ph*.3)+'px';$('rdim').style.height=Math.round(oy+ph*.3)+'px';
   const t=$('rtext');t.style.fontSize=R.font+'px';t.style.lineHeight=R.line;t.style.textAlign=R.align;t.style.color=R.color;$('rscroll').style.padding=Math.round(rvh*.3)+'px '+R.margin+'% '+Math.round(rvh*.7)+'px';$('rempty').hidden=!!R.text;rDraw()}
  const parts={};window.remoteText=m=>{if(m.tv===Rtv)return;(parts[m.tv]=parts[m.tv]||{n:m.n,p:{}}).p[m.i]=m.part;const q=parts[m.tv];if(Object.keys(q.p).length<q.n)return;
   R.text=Array.from({length:q.n},(_,k)=>q.p[k]).join('');Rtv=m.tv;for(const k in parts)delete parts[k];
