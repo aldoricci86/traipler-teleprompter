@@ -202,13 +202,15 @@ const toB=u=>{let t='';for(let i=0;i<u.length;i+=8192)t+=String.fromCharCode.app
 const fromB=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));
 const urlB=u=>toB(u).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 const urlFrom=t=>fromB(t.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-t.length%4)%4));
+let Rtv='',sending=false;
+const hello=()=>send({type:'cmd',action:'hello',tv:Rtv});
 let mqs=[],room='',cryptoKey=null,keyRaw='',lastRx=0,tq=0;const seen=new Set();
 const myTopic=()=>'traipler-tp/'+room+(remoteMode?'/m':'/r');   // cosa ascolto
 const toTopic=()=>'traipler-tp/'+room+(remoteMode?'/r':'/m');   // dove scrivo
 async function enc(o){const iv=crypto.getRandomValues(new Uint8Array(12));const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},cryptoKey,new TextEncoder().encode(JSON.stringify(o))));const out=new Uint8Array(12+ct.length);out.set(iv);out.set(ct,12);return toB(out)}
 async function dec(t){const u=fromB(t);const p=await crypto.subtle.decrypt({name:'AES-GCM',iv:u.subarray(0,12)},cryptoKey,u.subarray(12));return JSON.parse(new TextDecoder().decode(p))}
 async function send(m){if(!cryptoKey||!isUp())return;m._i=Math.random().toString(36).slice(2,10);let p;try{p=await enc(m)}catch{return}mqs.forEach(c=>{if(c.connected)try{c.publish(toTopic(),p)}catch{}})}
-const isUp=()=>mqs.some(c=>c.connected);
+const isUp=()=>mqs.some(c=>c.connected);const nUp=()=>mqs.filter(c=>c.connected).length;
 function setStatus(t){if(remoteMode)$('rstatus').textContent=t;else $('connection').textContent=t}
 async function setupLink(){
  if(!window.mqtt||!window.crypto||!crypto.subtle){setStatus('Collegamento non disponibile: serve Internet e una connessione sicura');return}
@@ -225,7 +227,7 @@ async function setupLink(){
   cryptoKey=await crypto.subtle.importKey('raw',urlFrom(keyRaw),'AES-GCM',false,['encrypt','decrypt']);
  }catch(e){setStatus('Codice non valido: inquadra di nuovo il QR');return}
  connectLink();
- setInterval(()=>{ if(remoteMode){ if(isUp())send({type:'cmd',action:'hello'}); const ok=Date.now()-lastRx<12000; if(isUp()&&!ok)setStatus('● Connesso, ma l\'iPad non risponde. Sull\'iPad apri l\'app (schermata con i copioni) e, se non basta, chiudila e riaprila due volte') }
+ setInterval(()=>{ if(remoteMode){ if(isUp())hello(); const ok=Date.now()-lastRx<12000; if(isUp()&&!ok)setStatus('● Connesso ('+nUp()+'/3 servizi) ma l\'iPad non risponde. Sull\'iPad apri l\'app con lo schermo acceso e, se non basta, chiudila e riaprila due volte. Se il link e\' stato copiato da un\'altra versione dell\'app, rifallo dal tasto Invia il link al PC') }
   else{ const ok=Date.now()-lastRx<12000; if(isUp())setStatus(ok?'● Telefono collegato':'● Pronto: inquadra il QR col telefono') } },3000);
 }
 function connectLink(){
@@ -234,17 +236,25 @@ function connectLink(){
  BROKERS.forEach(u=>{
   const c=mqtt.connect(u,{clientId:'tp'+Math.random().toString(16).slice(2,12),clean:true,connectTimeout:8000,reconnectPeriod:3000,keepalive:25});
   mqs.push(c);
-  c.on('connect',()=>{c.subscribe(myTopic(),{qos:0},()=>{if(Date.now()-lastRx>12000)setStatus(remoteMode?'● Cerco l\'iPad…':'● Pronto: inquadra il QR col telefono');if(remoteMode)send({type:'cmd',action:'hello'});else{queueText();broadcast()}})});
+  c.on('connect',()=>{c.subscribe(myTopic(),{qos:0},()=>{if(Date.now()-lastRx>12000)setStatus(remoteMode?'● Cerco l\'iPad…':'● Pronto: inquadra il QR col telefono');if(remoteMode)hello();else{queueText();broadcast()}})});
   c.on('message',async(tp,buf)=>{let m;try{m=await dec(buf.toString())}catch{return}
    if(m._i){if(seen.has(m._i))return;seen.add(m._i);if(seen.size>300)seen.delete(seen.values().next().value)}
    lastRx=Date.now();
    if(remoteMode){if(m.type==='state')remoteState(m);else if(m.type==='text')remoteText(m)}
-   else if(m&&m.type==='cmd'){setStatus('● Telefono collegato');if(m.action==='hello'){sendText();broadcast()}else command(m)}});
+   else if(m&&m.type==='cmd'){setStatus('● Telefono collegato');if(m.action==='hello'){if(m.tv!==curTv())sendText();broadcast()}else command(m)}});
   c.on('error',()=>{});
  });
- document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){mqs.forEach(c=>{if(!c.connected)try{c.reconnect()}catch{}});if(remoteMode)send({type:'cmd',action:'hello'})}});
+ document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){mqs.forEach(c=>{if(!c.connected)try{c.reconnect()}catch{}});if(remoteMode)hello()}});
 }
-function sendText(){send({type:'text',text:script.value.trim().slice(0,200000),font:S.font,line:S.line,align:S.align,color:S.color,margin:S.margin,mirror:S.mirror})}
+const hashT=t=>{let h=5381;for(let i=0;i<t.length;i++)h=((h<<5)+h+t.charCodeAt(i))|0;return (h>>>0).toString(36)+'.'+t.length};
+const curText=()=>script.value.trim().slice(0,200000);
+const curTv=()=>hashT(curText()+'|'+[S.font,S.line,S.align,S.color,S.margin].join());
+async function sendText(){ // a pezzi piccoli: i servizi pubblici scollegano chi manda messaggi grossi
+ if(sending)return;sending=true;
+ try{const text=curText(),tv=curTv(),N=6000,n=Math.max(1,Math.ceil(text.length/N));
+  for(let k=0;k<n;k++){await send({type:'text',tv,i:k,n,part:text.slice(k*N,(k+1)*N),font:S.font,line:S.line,align:S.align,color:S.color,margin:S.margin});await new Promise(r=>setTimeout(r,60))}
+ }finally{sending=false}
+}
 function queueText(){clearTimeout(tq);tq=setTimeout(()=>{if(!remoteMode&&isUp())sendText()},400)}
 
 /* ---------- telecomando iPhone ---------- */
@@ -258,10 +268,12 @@ if(remoteMode){
  const rH=()=>Math.max(1,$('rtext').offsetHeight);
  const rDraw=()=>{$('rscroll').style.transform='translateY('+(-rpos*rH())+'px)'};
  function rLayout(){const h=innerHeight,f=Math.max(22,Math.round(R.font*innerWidth/744*.95));const t=$('rtext');t.style.fontSize=f+'px';t.style.lineHeight=R.line;t.style.textAlign=R.align;t.style.color=R.color;$('rscroll').style.padding=Math.round(h*.3)+'px '+R.margin+'% '+Math.round(h*.7)+'px';$('rmir').style.transform=vMirror?'scaleX(-1)':'';$('rempty').hidden=!!R.text;rDraw()}
- window.remoteText=m=>{R.text=m.text||'';R.font=m.font||64;R.line=m.line||1.5;R.align=m.align||'center';R.color=m.color||'#ffffff';R.margin=m.margin||7;$('rtext').textContent=R.text;rwords=Math.max(1,R.text.trim()?R.text.trim().split(/\s+/).length:1);rLayout()};
+ const parts={};window.remoteText=m=>{if(m.tv===Rtv)return;(parts[m.tv]=parts[m.tv]||{n:m.n,p:{}}).p[m.i]=m.part;const q=parts[m.tv];if(Object.keys(q.p).length<q.n)return;
+  R.text=Array.from({length:q.n},(_,k)=>q.p[k]).join('');Rtv=m.tv;for(const k in parts)delete parts[k];
+  R.font=m.font||64;R.line=m.line||1.5;R.align=m.align||'center';R.color=m.color||'#ffffff';R.margin=m.margin||7;$('rtext').textContent=R.text;rwords=Math.max(1,R.text.trim()?R.text.trim().split(/\s+/).length:1);rLayout()};
  window.remoteState=m=>{rrun=!!m.running;rvoice=!!m.voice;rwpm=m.wpm;$('rplay').textContent=rrun?'Ⅱ Pausa':'▶ Play';$('rvplay').textContent=rrun?'Ⅱ':'▶';$('rwpmv').textContent=m.wpm+' WPM';$('rvwpm').textContent=m.wpm+' WPM';$('rtime').textContent=m.time;if(!dragging){$('rpos').value=Math.round(m.pos*1000);$('rposv').textContent=Math.round(m.pos*100)+'%'}if(!pdrag){const d=m.pos-rpos;rpos=Math.abs(d)>.01?m.pos:rpos+d*.35;if(rshow)rDraw()}setStatus((m.open?(rrun?'● In riproduzione':'● In pausa'):'● Collegato · teleprompter chiuso')+' · '+m.time)};
  function rLoop(t){if(!rshow)return;if(!rlast)rlast=t;const dt=Math.min(.1,(t-rlast)/1000);rlast=t;if(rrun&&!rvoice&&!pdrag){rpos=Math.min(1,rpos+dt*(rwpm/60)/rwords)}rDraw();requestAnimationFrame(rLoop)}
- $('rshow').onclick=()=>{rshow=true;$('rview').hidden=false;rlast=0;rLayout();send({type:'cmd',action:'hello'});requestAnimationFrame(rLoop)};
+ $('rshow').onclick=()=>{rshow=true;$('rview').hidden=false;rlast=0;rLayout();hello();requestAnimationFrame(rLoop)};
  $('rbackc').onclick=()=>{rshow=false;$('rview').hidden=true};
  $('rmir2').onclick=()=>{vMirror=!vMirror;rLayout()};
  $('rvplay').onclick=c('toggle');$('rvrew').onclick=c('seek',-10);$('rvfwd').onclick=c('seek',10);$('rvslow').onclick=c('wpmd',-5);$('rvfast').onclick=c('wpmd',5);
