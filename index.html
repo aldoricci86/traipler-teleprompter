@@ -232,7 +232,7 @@ html.solo #rbackc{display:none!important}
 <div class="toast" id="toast"></div>
 <script src="https://unpkg.com/mqtt@5.3.4/dist/mqtt.min.js"></script>
 <script>
-const BUILD='v23';
+const BUILD='v24';
 const SID=Math.random().toString(36).slice(2,8);
 const SOLO=/[?&]solo=1/.test(location.search);if(SOLO)document.documentElement.classList.add('solo');
 /* aggiornamento automatico: se online c'e' una versione piu' nuova, ricarica da solo (la chiave del telecomando nell'indirizzo resta) */
@@ -298,6 +298,7 @@ function connectLink(){
    if(m._i){if(seen.has(m._i))return;seen.add(m._i);if(seen.size>300)seen.delete(seen.values().next().value)}
    lastRx=Date.now();
    if(remoteMode){const now=Date.now();
+    if(!m.sid){window.oldPad=now;return} // pagina iPad vecchia (v20): non ha identificativo, passava il filtro e faceva saltare la vista
     if(m.sid){ // piu' pagine dell'iPad nella stessa stanza: il PC segue solo quella con il teleprompter aperto (o la prima), mai le due insieme
      seenSid[m.sid]=now;
      if(!lockSid||(now-(lockAt||0)>8000&&lockSid!==m.sid)||(m.type==='state'&&m.open&&lockSid!==m.sid&&!lockOpen)){lockSid=m.sid;lockOpen=!!m.open}
@@ -361,7 +362,7 @@ if(remoteMode){
  const parts={};window.remoteText=m=>{if(m.tv===Rtv)return;(parts[m.tv]=parts[m.tv]||{n:m.n,p:{}}).p[m.i]=m.part;const q=parts[m.tv];if(Object.keys(q.p).length<q.n)return;
   R.text=Array.from({length:q.n},(_,k)=>q.p[k]).join('');Rtv=m.tv;for(const k in parts)delete parts[k];
   R.font=m.font||64;R.line=m.line||1.5;R.align=m.align||'center';R.color=m.color||'#ffffff';R.margin=m.margin||7;$('rtext').textContent=R.text;rwords=Math.max(1,R.text.trim()?R.text.trim().split(/\s+/).length:1);if(!$('rtxt').dataset.dirty)$('rtxt').value=R.text;rLayout()};
- let lastQ=0,lastQsid='';window.remoteState=m=>{if(m.q){if(m.sid!==lastQsid){lastQsid=m.sid;lastQ=0}if(m.q<=lastQ)return;lastQ=m.q}$('rempty').innerHTML=R.text?'':"Aspetto il testo dall'iPad…<br>Apri il copione sull'iPad.";if(!m.vw){$('rstatus').dataset.old='1'}else delete $('rstatus').dataset.old;$('rbuild').textContent=(document.getElementById('rbuild').dataset.multi?'ATTENZIONE: '+document.getElementById('rbuild').dataset.multi+' pagine dell\'iPad aperte nella stessa stanza: chiudi le altre. ':'')+(m.b?('iPad '+m.b+' · vista '+m.vw+'×'+m.vh):"iPad con app VECCHIA: chiudi e riapri l'app sull'iPad (anche due volte) per avere la stessa vista");if(m.vw&&m.vh){const now=Date.now();if(m.open)lastOpenAt=now;
+ let lastQ=0,lastQsid='';window.remoteState=m=>{if(m.q){if(m.sid!==lastQsid){lastQsid=m.sid;lastQ=0}if(m.q<=lastQ)return;lastQ=m.q}$('rempty').innerHTML=R.text?'':"Aspetto il testo dall'iPad…<br>Apri il copione sull'iPad.";if(!m.vw){$('rstatus').dataset.old='1'}else delete $('rstatus').dataset.old;$('rbuild').textContent=(Date.now()-(window.oldPad||0)<15000?"ATTENZIONE: sull'iPad e' ancora aperta una pagina VECCHIA (v20, vista verticale): ignorata. Chiudila dal selettore app e tieni aperta solo Traipler. ":'')+(document.getElementById('rbuild').dataset.multi?'ATTENZIONE: '+document.getElementById('rbuild').dataset.multi+' pagine dell\'iPad aperte nella stessa stanza: chiudi le altre. ':'')+(m.b?('iPad '+m.b+' · vista '+m.vw+'×'+m.vh):"iPad con app VECCHIA: chiudi e riapri l'app sull'iPad (anche due volte) per avere la stessa vista");if(m.vw&&m.vh){const now=Date.now();if(m.open)lastOpenAt=now;
   if(m.open||now-lastOpenAt>10000){const cand=m.vw+'x'+m.vh;if(cand===candK)candN++;else{candK=cand;candN=1}
    if(candN>=3&&(Math.abs(m.vw-rvw)>2||Math.abs(m.vh-rvh)>2)){rvw=m.vw;rvh=m.vh;if(rshow)rLayout()}}}rrun=!!m.running;rvoice=!!m.voice;rwpm=m.wpm;$('rplay').textContent=rrun?'Ⅱ Pausa':'▶ Play';$('rdplay').textContent=rrun?'Ⅱ':'▶';$('rdwpm').textContent=m.wpm+' WPM';$('rvplay').textContent=rrun?'Ⅱ':'▶';$('rwpmv').textContent=m.wpm+' WPM';$('rvwpm').textContent=m.wpm+' WPM';$('rtime').textContent=m.time;if(!dragging){$('rpos').value=Math.round(m.pos*1000);$('rposv').textContent=Math.round(m.pos*100)+'%'}if(!pdrag&&Date.now()>wLock){const d=m.pos-rpos,ad=Math.abs(d);/* in riproduzione il PC avanza da solo come l'iPad: corregge solo se si allontana davvero, senza scatti */if(!m.running||ad>.03)rpos=m.pos;else if(ad>.004)rpos+=d*.08;if(rshow)rDraw()}setStatus((m.open?(rrun?'● In riproduzione':'● In pausa'):'● Collegato · teleprompter chiuso')+' · '+m.time)};
  function rLoop(t){if(!rshow)return;if(!rlast)rlast=t;const dt=Math.min(.1,(t-rlast)/1000);rlast=t;if(rrun&&!rvoice&&!pdrag&&Date.now()>wLock){rpos=Math.min(1,rpos+dt*(rwpm/60)/rwords)}rDraw();requestAnimationFrame(rLoop)}
