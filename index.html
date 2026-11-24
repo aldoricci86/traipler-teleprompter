@@ -232,7 +232,7 @@ html.solo #rbackc{display:none!important}
 <div class="toast" id="toast"></div>
 <script src="https://unpkg.com/mqtt@5.3.4/dist/mqtt.min.js"></script>
 <script>
-const BUILD='v22';
+const BUILD='v23';
 const SID=Math.random().toString(36).slice(2,8);
 const SOLO=/[?&]solo=1/.test(location.search);if(SOLO)document.documentElement.classList.add('solo');
 /* aggiornamento automatico: se online c'e' una versione piu' nuova, ricarica da solo (la chiave del telecomando nell'indirizzo resta) */
@@ -348,8 +348,9 @@ if(remoteMode){
  $('rmirror').onclick=c('mirror');$('rslow').onclick=c('wpmd',-5);$('rfast').onclick=c('wpmd',5);$('rfm').onclick=c('fontd',-4);$('rfp').onclick=c('fontd',4);
  let dragging=false;$('rpos').oninput=()=>{dragging=true;$('rposv').textContent=Math.round($('rpos').value/10)+'%';send({type:'cmd',action:'pos',value:$('rpos').value/1000})};$('rpos').onchange=()=>{dragging=false};
  let wLock=0,wT=0,wTm=0;const R={text:'',font:64,line:1.5,align:'center',color:'#ffffff',margin:7,mirror:'1'};let rpos=0,rvoice=false,rrun=false,rwpm=110,rshow=false,vMirror=false,pdrag=null,rwords=1,rlast=0;
- const rH=()=>Math.max(1,$('rtext').offsetHeight);
- const rDraw=()=>{$('rscroll').style.transform='translateY('+(-rpos*rH())+'px)'};
+ let _rh=0;try{new ResizeObserver(()=>{_rh=0}).observe($('rtext'))}catch{}
+ const rH=()=>_rh||(_rh=Math.max(1,$('rtext').offsetHeight));
+ const rDraw=()=>{$('rscroll').style.transform='translate3d(0,'+(-Math.round(rpos*rH()))+'px,0)'};
  let rk=1,rvw=744,rvh=1133,lastOpenAt=0,candK='',candN=0;
  function rLayout(){const rvE=$('rview'),desk=matchMedia('(min-width:1000px)').matches&&!SOLO,availW=desk?Math.min(Math.round(innerWidth*.42),680):innerWidth,availH=desk?innerHeight-32:innerHeight;
   rk=Math.min(availW/rvw,availH/rvh);const pw=Math.round(rvw*rk),ph=Math.round(rvh*rk);
@@ -360,7 +361,7 @@ if(remoteMode){
  const parts={};window.remoteText=m=>{if(m.tv===Rtv)return;(parts[m.tv]=parts[m.tv]||{n:m.n,p:{}}).p[m.i]=m.part;const q=parts[m.tv];if(Object.keys(q.p).length<q.n)return;
   R.text=Array.from({length:q.n},(_,k)=>q.p[k]).join('');Rtv=m.tv;for(const k in parts)delete parts[k];
   R.font=m.font||64;R.line=m.line||1.5;R.align=m.align||'center';R.color=m.color||'#ffffff';R.margin=m.margin||7;$('rtext').textContent=R.text;rwords=Math.max(1,R.text.trim()?R.text.trim().split(/\s+/).length:1);if(!$('rtxt').dataset.dirty)$('rtxt').value=R.text;rLayout()};
- window.remoteState=m=>{$('rempty').innerHTML=R.text?'':"Aspetto il testo dall'iPad…<br>Apri il copione sull'iPad.";if(!m.vw){$('rstatus').dataset.old='1'}else delete $('rstatus').dataset.old;$('rbuild').textContent=(document.getElementById('rbuild').dataset.multi?'ATTENZIONE: '+document.getElementById('rbuild').dataset.multi+' pagine dell\'iPad aperte nella stessa stanza: chiudi le altre. ':'')+(m.b?('iPad '+m.b+' · vista '+m.vw+'×'+m.vh):"iPad con app VECCHIA: chiudi e riapri l'app sull'iPad (anche due volte) per avere la stessa vista");if(m.vw&&m.vh){const now=Date.now();if(m.open)lastOpenAt=now;
+ let lastQ=0,lastQsid='';window.remoteState=m=>{if(m.q){if(m.sid!==lastQsid){lastQsid=m.sid;lastQ=0}if(m.q<=lastQ)return;lastQ=m.q}$('rempty').innerHTML=R.text?'':"Aspetto il testo dall'iPad…<br>Apri il copione sull'iPad.";if(!m.vw){$('rstatus').dataset.old='1'}else delete $('rstatus').dataset.old;$('rbuild').textContent=(document.getElementById('rbuild').dataset.multi?'ATTENZIONE: '+document.getElementById('rbuild').dataset.multi+' pagine dell\'iPad aperte nella stessa stanza: chiudi le altre. ':'')+(m.b?('iPad '+m.b+' · vista '+m.vw+'×'+m.vh):"iPad con app VECCHIA: chiudi e riapri l'app sull'iPad (anche due volte) per avere la stessa vista");if(m.vw&&m.vh){const now=Date.now();if(m.open)lastOpenAt=now;
   if(m.open||now-lastOpenAt>10000){const cand=m.vw+'x'+m.vh;if(cand===candK)candN++;else{candK=cand;candN=1}
    if(candN>=3&&(Math.abs(m.vw-rvw)>2||Math.abs(m.vh-rvh)>2)){rvw=m.vw;rvh=m.vh;if(rshow)rLayout()}}}rrun=!!m.running;rvoice=!!m.voice;rwpm=m.wpm;$('rplay').textContent=rrun?'Ⅱ Pausa':'▶ Play';$('rdplay').textContent=rrun?'Ⅱ':'▶';$('rdwpm').textContent=m.wpm+' WPM';$('rvplay').textContent=rrun?'Ⅱ':'▶';$('rwpmv').textContent=m.wpm+' WPM';$('rvwpm').textContent=m.wpm+' WPM';$('rtime').textContent=m.time;if(!dragging){$('rpos').value=Math.round(m.pos*1000);$('rposv').textContent=Math.round(m.pos*100)+'%'}if(!pdrag&&Date.now()>wLock){const d=m.pos-rpos,ad=Math.abs(d);/* in riproduzione il PC avanza da solo come l'iPad: corregge solo se si allontana davvero, senza scatti */if(!m.running||ad>.03)rpos=m.pos;else if(ad>.004)rpos+=d*.08;if(rshow)rDraw()}setStatus((m.open?(rrun?'● In riproduzione':'● In pausa'):'● Collegato · teleprompter chiuso')+' · '+m.time)};
  function rLoop(t){if(!rshow)return;if(!rlast)rlast=t;const dt=Math.min(.1,(t-rlast)/1000);rlast=t;if(rrun&&!rvoice&&!pdrag&&Date.now()>wLock){rpos=Math.min(1,rpos+dt*(rwpm/60)/rwords)}rDraw();requestAnimationFrame(rLoop)}
@@ -504,17 +505,19 @@ function applyStyle(){
  $('mir').style.transform=(open&&S.mirror==='1')?'scaleX(-1)':'';
  draw();queueText();wTops=[];
 }
-function textH(){return txt.offsetHeight}
+let _th=0;try{new ResizeObserver(()=>{_th=0}).observe(txt)}catch{}
+function textH(){return _th||(_th=txt.offsetHeight)}
 function maxOff(){return Math.max(1,textH())}
 // px al secondo: dalla velocita' in parole al minuto e dalla densita' vera del testo
 function pxs(){const w=Math.max(1,words());return (S.wpm/60)*(textH()/w)}
+let _tt='',_sv=-1,_wb='';
 function draw(){
  offset=Math.max(0,Math.min(maxOff(),offset));
- scroller.style.transform=`translateY(${-offset}px)`;
+ scroller.style.transform=`translate3d(0,${-Math.round(offset*(devicePixelRatio||1))/(devicePixelRatio||1)}px,0)`;
  const dur=words()/S.wpm*60,pos=offset/maxOff();
- $('time').textContent=fmt(pos*dur)+' / '+fmt(dur);
- if(!seeking)$('seek').value=Math.round(pos*1000);
- $('wpmBadge').textContent=S.wpm+' WPM';
+ const tt=fmt(pos*dur)+' / '+fmt(dur);if(tt!==_tt){_tt=tt;$('time').textContent=tt}
+ const sv=Math.round(pos*1000);if(!seeking&&sv!==_sv){_sv=sv;$('seek').value=sv}
+ const wb=S.wpm+' WPM';if(wb!==_wb){_wb=wb;$('wpmBadge').textContent=wb}
 }
 let seeking=false;
 function tick(t){
@@ -614,7 +617,7 @@ function command(m){
  else if(a==='set'){for(const k in v){if(['wpm','font','line','margin'].includes(k)){S[k]=+v[k]}else if(['mirror','align','color','voice','vlang'].includes(k)){S[k]=String(v[k])}}
   S.wpm=Math.max(20,Math.min(250,S.wpm));S.font=Math.max(28,Math.min(160,S.font));syncSettings();applyStyle();stats();saveS();broadcast()}
 }
-let bt=0;function broadcast(){const now=Date.now();if(now-bt<120&&running)return;bt=now;send({type:'state',b:BUILD,vw:(open&&pview.clientWidth)||innerWidth,vh:(open&&pview.clientHeight)||innerHeight,voice:S.voice==='1',running,open,wpm:S.wpm,pos:open?offset/maxOff():0,time:$('time').textContent})}
+let bt=0,bq=0;function broadcast(){const now=Date.now();if(now-bt<200&&running)return;bt=now;send({type:'state',q:Math.max(now,++bq),b:BUILD,vw:(open&&pview.clientWidth)||innerWidth,vh:(open&&pview.clientHeight)||innerHeight,voice:S.voice==='1',running,open,wpm:S.wpm,pos:open?offset/maxOff():0,time:$('time').textContent})}
 setInterval(()=>{if(isUp())broadcast()},1000);
 
 syncSettings();loadScript();setupLink();
